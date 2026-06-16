@@ -1,0 +1,13 @@
+---
+import CongressHome from '../components/CongressHome.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { defaultLocale, siteConfig } from '../config/site';
+import { useTranslations } from '../i18n/ui';
+
+const locale = defaultLocale;
+const t = useTranslations(locale);
+---
+
+<BaseLayout title={t('home.title')} description={t('site.description')} locale={locale}>
+  <CongressHome locale={locale} repositoryUrl={siteConfig.repositoryUrl} />
+</BaseLayout>
