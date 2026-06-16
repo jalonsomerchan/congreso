@@ -1,0 +1,20 @@
+---
+import CongressListPage from '../../components/CongressListPage.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { dataSections, getDataSection, type DataSectionId } from '../../config/dataConfig';
+import { defaultLocale } from '../../config/site';
+import { useTranslations, type TranslationKey } from '../../i18n/ui';
+
+export function getStaticPaths() {
+  return dataSections.map((section) => ({ params: { section: section.id }, props: { sectionId: section.id } }));
+}
+
+const sectionId = Astro.props.sectionId as DataSectionId;
+const section = getDataSection(sectionId);
+const locale = defaultLocale;
+const t = useTranslations(locale);
+---
+
+<BaseLayout title={t(section.listTitleKey as TranslationKey)} description={t(section.descriptionKey as TranslationKey)} locale={locale}>
+  <CongressListPage locale={locale} sectionId={sectionId} />
+</BaseLayout>
