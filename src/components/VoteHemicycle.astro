@@ -1,4 +1,49 @@
 ---
+import { formatNumber } from '../lib/congressData';
+
+interface Totals {
+  yes: number;
+  no: number;
+  abstentions: number;
+  absent: number;
+}
+
+interface Props {
+  totals: Totals;
+  locale: string;
+  labels: {
+    yes: string;
+    no: string;
+    abstentions: string;
+    absent: string;
+    title: string;
+  };
+  compact?: boolean;
+}
+
+const { totals, locale, labels, compact = false } = Astro.props;
+const rows = [
+  ['yes', totals.yes, labels.yes],
+  ['no', totals.no, labels.no],
+  ['abstention', totals.abstentions, labels.abstentions],
+  ['absent', totals.absent, labels.absent],
+] as const;
+const maxDots = compact ? 140 : 350;
+const total = Math.max(rows.reduce((sum, [, count]) => sum + Number(count ?? 0), 0), 1);
+const scale = total > maxDots ? maxDots / total : 1;
+const dots = rows.flatMap(([type, count, label]) =>
+  Array.from({ length: Math.round(Number(count ?? 0) * scale) }, () => ({ type, label }))
+);
 ---
 
-<div></div>
+<div class:list={['vote-panel', compact && 'vote-panel--compact']}>
+  <div class="vote-panel__stats">
+    <div class="vote-stat vote-stat--yes"><span>{labels.yes}</span><strong>{formatNumber(totals.yes, locale)}</strong></div>
+    <div class="vote-stat vote-stat--no"><span>{labels.no}</span><strong>{formatNumber(totals.no, locale)}</strong></div>
+    <div class="vote-stat vote-stat--abstention"><span>{labels.abstentions}</span><strong>{formatNumber(totals.abstentions, locale)}</strong></div>
+    <div class="vote-stat vote-stat--absent"><span>{labels.absent}</span><strong>{formatNumber(totals.absent, locale)}</strong></div>
+  </div>
+  <div class="hemicycle" aria-label={labels.title}>
+    {dots.map((dot) => <span class:list={['seat', `seat--${dot.type}`]} title={dot.label}></span>)}
+  </div>
+</div>
