@@ -27,6 +27,7 @@ const labels = {
   abstentions: t('congress.vote.abstention'),
   absent: t('congress.vote.absent'),
   title: t('congress.vote.hemicycle'),
+  unassigned: t('congress.vote.unassigned'),
 };
 const metadata = [
   [t('congress.id'), record.id],
@@ -59,7 +60,7 @@ const metadata = [
     {totals && (
       <article class="detail-card">
         <h2>{t('congress.voteResult')}</h2>
-        <VoteHemicycle totals={totals} locale={localeCode} labels={labels} />
+        <VoteHemicycle totals={totals} locale={localeCode} labels={labels} detail={detail} />
         {votesByGroup.length > 0 && (
           <div class="table-wrap">
             <table>

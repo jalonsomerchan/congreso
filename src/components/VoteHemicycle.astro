@@ -1,11 +1,13 @@
 ---
-import { formatNumber } from '../lib/congressData';
+import { formatNumber, getVoteSeatResults, type VoteType } from '../lib/congressData';
+import { getFallbackHemicyclePositions, getHemicycleSeatPosition, normalizeSeatId, type SeatPosition } from '../lib/hemicycleLayout';
 
 interface Totals {
   yes: number;
   no: number;
   abstentions: number;
   absent: number;
+  present?: number;
 }
 
 interface Props {
@@ -17,23 +19,63 @@ interface Props {
     abstentions: string;
     absent: string;
     title: string;
+    unassigned: string;
   };
+  detail?: any;
   compact?: boolean;
 }
 
-const { totals, locale, labels, compact = false } = Astro.props;
+type SeatView = SeatPosition & {
+  id: string;
+  type: 'yes' | 'no' | 'abstention' | 'absent';
+  label: string;
+};
+
+const { totals, locale, labels, detail = null, compact = false } = Astro.props;
+const voteSeats = getVoteSeatResults(detail);
+const seatsByPosition = voteSeats
+  .map((vote) => {
+    const position = getHemicycleSeatPosition(vote.seat);
+    const seatId = normalizeSeatId(vote.seat);
+    if (!position || !seatId) return null;
+
+    return {
+      ...position,
+      id: seatId,
+      type: getSeatClass(vote.voteType),
+      label: [vote.seat, vote.deputy, vote.group, vote.vote].filter(Boolean).join(' · '),
+    };
+  })
+  .filter(Boolean) as SeatView[];
+
+const fallbackSeats = seatsByPosition.length === 0 ? getFallbackSeats() : [];
+const seats = [...seatsByPosition, ...fallbackSeats];
+const unassignedVotes = voteSeats.filter((vote) => !normalizeSeatId(vote.seat) || !getHemicycleSeatPosition(vote.seat)).length;
 const rows = [
   ['yes', totals.yes, labels.yes],
   ['no', totals.no, labels.no],
   ['abstention', totals.abstentions, labels.abstentions],
   ['absent', totals.absent, labels.absent],
 ] as const;
-const maxDots = compact ? 140 : 350;
-const total = Math.max(rows.reduce((sum, [, count]) => sum + Number(count ?? 0), 0), 1);
-const scale = total > maxDots ? maxDots / total : 1;
-const dots = rows.flatMap(([type, count, label]) =>
-  Array.from({ length: Math.round(Number(count ?? 0) * scale) }, () => ({ type, label }))
-);
+
+function getFallbackSeats() {
+  const maxSeats = compact ? 140 : 350;
+  const total = Math.max(rows.reduce((sum, [, count]) => sum + Number(count ?? 0), 0), 1);
+  const scale = total > maxSeats ? maxSeats / total : 1;
+  const voteTypes = rows.flatMap(([type, count, label]) =>
+    Array.from({ length: Math.round(Number(count ?? 0) * scale) }, () => ({ type, label }))
+  );
+  return getFallbackHemicyclePositions(voteTypes.length).map((position, index) => ({
+    ...position,
+    id: `fallback-${index}`,
+    type: voteTypes[index]?.type ?? 'absent',
+    label: voteTypes[index]?.label ?? labels.absent,
+  })) as SeatView[];
+}
+
+function getSeatClass(voteType: VoteType) {
+  return voteType === 'abstentions' ? 'abstention' : voteType;
+}
 ---
 
 <div class:list={['vote-panel', compact && 'vote-panel--compact']}>
@@ -43,7 +85,19 @@ const dots = rows.flatMap(([type, count, label]) =>
     <div class="vote-stat vote-stat--abstention"><span>{labels.abstentions}</span><strong>{formatNumber(totals.abstentions, locale)}</strong></div>
     <div class="vote-stat vote-stat--absent"><span>{labels.absent}</span><strong>{formatNumber(totals.absent, locale)}</strong></div>
   </div>
-  <div class="hemicycle" aria-label={labels.title}>
-    {dots.map((dot) => <span class:list={['seat', `seat--${dot.type}`]} title={dot.label}></span>)}
-  </div>
+  <figure class="hemicycle" aria-label={labels.title}>
+    <svg class="hemicycle__map" viewBox="0 0 1000 640" role="img">
+      <title>{labels.title}</title>
+      <path class="hemicycle__floor" d="M124 555 C170 348 310 180 500 180 C690 180 830 348 876 555 L812 555 C766 388 650 260 500 260 C350 260 234 388 188 555 Z" />
+      <path class="hemicycle__front" d="M342 372 C382 324 430 302 500 302 C570 302 618 324 658 372" />
+      <g>
+        {seats.map((seat) => (
+          <circle class:list={['seat', `seat--${seat.type}`]} cx={seat.x} cy={seat.y} r={compact ? 7 : 8.5}>
+            <title>{seat.label}</title>
+          </circle>
+        ))}
+      </g>
+    </svg>
+    {unassignedVotes > 0 && <figcaption>{labels.unassigned}: {formatNumber(unassignedVotes, locale)}</figcaption>}
+  </figure>
 </div>
