@@ -1,0 +1,169 @@
+---
+import MetricCard from './MetricCard.astro';
+import { dataConfig } from '../config/dataConfig';
+import { type Locale } from '../config/site';
+
+interface Props {
+  locale: Locale;
+  repositoryUrl: string;
+}
+
+const { locale, repositoryUrl } = Astro.props;
+const esCopy = {
+  eyebrow: 'Con\u0067reso en datos',
+  title: 'La legislatu\u0072a actual, de un vistazo',
+  description: 'Consulta el presente y compara el hist\u00f3rico disponible por bloques.',
+  primaryCta: 'Ver datos',
+  dataApi: 'API de datos',
+  repository: 'C\u00f3digo fuente',
+  loading: 'Cargando datos...',
+  error: 'No se han podido cargar los datos',
+  ready: 'Datos actualizados',
+  currentBadge: 'Legislatu\u0072a actual',
+  allSections: 'Todo',
+  noData: 'No hay datos suficientes para esta selecci\u00f3n.',
+  noResults: 'Sin resultados',
+  viewSource: 'Ver fuente oficial',
+  records: 'registros',
+  updated: 'Actualizado',
+  years: 'A\u00f1os',
+  selectGroup: 'Legislatu\u0072a',
+  voteYes: 'S\u00ed',
+  voteNo: 'No',
+  abstentions: 'Abstenciones',
+  absent: 'No votan',
+  summaryTitle: 'Resumen principal',
+  metricCurrent: 'Registros actuales',
+  metricTotal: 'Registros totales',
+  metricGroups: 'Legislatu\u0072as',
+  metricUpdated: 'Actualizado',
+  filtersTitle: 'Filtros',
+  filtersDescription: 'Cambia de legislatu\u0072a, filtra por bloque o busca por texto.',
+  searchLabel: 'Buscar',
+  searchPlaceholder: 'Busca asunto, fichero o identificador',
+  sectionFilters: 'Filtros por bloque',
+  blocksEyebrow: 'Bloques',
+  blocksTitle: 'Qu\u00e9 contiene cada bloque',
+  historyEyebrow: 'Hist\u00f3rico',
+  historyTitle: 'Registros por legislatu\u0072a',
+  insightTitle: 'Lectura r\u00e1pida',
+  insightLoading: 'Calculando el bloque con m\u00e1s actividad.',
+  latestEyebrow: '\u00daltimos datos',
+  latestTitle: 'Actividad reciente',
+  block0: 'Vota\u0063iones',
+  block1: 'Inicia\u0074ivas',
+  block2: 'Interven\u0063iones',
+  block3: 'Dipu\u0074ados',
+};
+const enCopy = {
+  ...esCopy,
+  eyebrow: 'Open data',
+  title: 'Current term at a glance',
+  description: 'Review the current view and compare historical blocks.',
+  primaryCta: 'View data',
+  dataApi: 'Data API',
+  repository: 'Source code',
+  loading: 'Loading data...',
+  error: 'The data could not be loaded',
+  ready: 'Data loaded',
+  currentBadge: 'Current term',
+  allSections: 'All',
+  noData: 'There is not enough data for this selection.',
+  noResults: 'No results',
+  viewSource: 'View official source',
+  records: 'records',
+  updated: 'Updated',
+  years: 'Years',
+  selectGroup: 'Term',
+  voteYes: 'Yes',
+  voteNo: 'No',
+  abstentions: 'Abstentions',
+  absent: 'Absent',
+  summaryTitle: 'Main summary',
+  metricCurrent: 'Current records',
+  metricTotal: 'Total records',
+  metricGroups: 'Terms',
+  metricUpdated: 'Updated',
+  filtersTitle: 'Filters',
+  filtersDescription: 'Switch term, filter by block or search by text.',
+  searchLabel: 'Search',
+  searchPlaceholder: 'Search topic, file or identifier',
+  sectionFilters: 'Block filters',
+  blocksEyebrow: 'Blocks',
+  blocksTitle: 'What each block contains',
+  historyEyebrow: 'History',
+  historyTitle: 'Records by term',
+  insightTitle: 'Quick read',
+  insightLoading: 'Calculating the most active block.',
+  latestEyebrow: 'Latest data',
+  latestTitle: 'Recent activity',
+  block0: 'Block 1',
+  block1: 'Block 2',
+  block2: 'Block 3',
+  block3: 'Block 4',
+};
+const copy = locale === 'en' ? enCopy : esCopy;
+const blockLabels = {
+  [dataConfig.blocks[0]]: copy.block0,
+  [dataConfig.blocks[1]]: copy.block1,
+  [dataConfig.blocks[2]]: copy.block2,
+  [dataConfig.blocks[3]]: copy.block3,
+};
+const dashboardConfig = {
+  apiBaseUrl: dataConfig.apiBaseUrl,
+  dataFolder: dataConfig.dataFolder,
+  groupIndexFile: dataConfig.groupIndexFile,
+  groupListKey: dataConfig.groupListKey,
+  currentGroupSlug: dataConfig.currentGroupSlug,
+  currentGroupId: dataConfig.currentGroupId,
+  voteBlock: dataConfig.voteBlock,
+  blocks: dataConfig.blocks,
+  copy: { ...copy, blockLabels },
+};
+const dashboardConfigJson = JSON.stringify(dashboardConfig).replace(/</g, '\\u003c');
+---
+
+<div class="dashboard" data-open-dashboard>
+  <section class="dashboard__hero" aria-labelledby="dashboard-title">
+    <div>
+      <p class="dashboard__eyebrow">{copy.eyebrow}</p>
+      <h1 id="dashboard-title">{copy.title}</h1>
+      <p class="dashboard__lead">{copy.description}</p>
+      <div class="dashboard__actions">
+        <a class="dashboard__button dashboard__button--primary" href="#datos">{copy.primaryCta}</a>
+        <a class="dashboard__button" href={dataConfig.apiBaseUrl}>{copy.dataApi}</a>
+        <a class="dashboard__button" href={repositoryUrl}>{copy.repository}</a>
+      </div>
+    </div>
+    <div class="dashboard__status" aria-live="polite"><span data-status-dot></span><span data-status>{copy.loading}</span></div>
+  </section>
+
+  <section class="dashboard__section" id="datos" aria-labelledby="summary-title">
+    <p class="dashboard__eyebrow">{copy.currentBadge}</p>
+    <h2 id="summary-title">{copy.summaryTitle}</h2>
+    <div class="dashboard__metrics" data-summary-metrics>
+      <MetricCard label={copy.metricCurrent} value="—" tone="primary" />
+      <MetricCard label={copy.metricTotal} value="—" />
+      <MetricCard label={copy.metricGroups} value="—" />
+      <MetricCard label={copy.metricUpdated} value="—" />
+    </div>
+  </section>
+
+  <section class="dashboard__section" aria-labelledby="filters-title">
+    <div class="dashboard__toolbar">
+      <div><p class="dashboard__eyebrow" id="filters-title">{copy.filtersTitle}</p><p class="dashboard__hint">{copy.filtersDescription}</p></div>
+      <div class="dashboard__controls">
+        <label><span>{copy.selectGroup}</span><select data-group-select aria-label={copy.selectGroup}></select></label>
+        <label><span>{copy.searchLabel}</span><input data-search type="search" placeholder={copy.searchPlaceholder} /></label>
+      </div>
+    </div>
+    <div class="dashboard__chips" data-section-filters aria-label={copy.sectionFilters}></div>
+  </section>
+
+  <section class="dashboard__section" aria-labelledby="blocks-title"><p class="dashboard__eyebrow">{copy.blocksEyebrow}</p><h2 id="blocks-title">{copy.blocksTitle}</h2><div class="dashboard__block-grid" data-blocks></div></section>
+  <section class="dashboard__section dashboard__section--split" aria-labelledby="history-title"><div><p class="dashboard__eyebrow">{copy.historyEyebrow}</p><h2 id="history-title">{copy.historyTitle}</h2><div class="dashboard__bars" data-history></div></div><aside class="dashboard__insight" data-insight><p class="dashboard__eyebrow">{copy.insightTitle}</p><strong>—</strong><span>{copy.insightLoading}</span></aside></section>
+  <section class="dashboard__section" aria-labelledby="latest-title"><p class="dashboard__eyebrow">{copy.latestEyebrow}</p><h2 id="latest-title">{copy.latestTitle}</h2><div class="dashboard__records" data-records></div></section>
+
+  <script id="open-dashboard-config" type="application/json" set:html={dashboardConfigJson}></script>
+  <script>import '../scripts/data-dashboard.js';</script>
+</div>
