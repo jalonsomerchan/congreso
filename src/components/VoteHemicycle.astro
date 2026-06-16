@@ -33,13 +33,11 @@ type SeatView = SeatPosition & {
 
 const { totals, locale, labels, detail = null, compact = false } = Astro.props;
 const voteSeats = getVoteSeatResults(detail);
-const usedSeats = new Set<string>();
 const seatsByPosition = voteSeats
   .map((vote) => {
     const position = getHemicycleSeatPosition(vote.seat);
     const seatId = normalizeSeatId(vote.seat);
     if (!position || !seatId) return null;
-    usedSeats.add(seatId);
 
     return {
       ...position,
@@ -50,7 +48,7 @@ const seatsByPosition = voteSeats
   })
   .filter(Boolean) as SeatView[];
 
-const fallbackSeats = seatsByPosition.length === 0 ? getFallbackSeats() : getMissingSeats();
+const fallbackSeats = seatsByPosition.length === 0 ? getFallbackSeats() : [];
 const seats = [...seatsByPosition, ...fallbackSeats];
 const unassignedVotes = voteSeats.filter((vote) => !normalizeSeatId(vote.seat) || !getHemicycleSeatPosition(vote.seat)).length;
 const rows = [
@@ -73,23 +71,6 @@ function getFallbackSeats() {
     type: voteTypes[index]?.type ?? 'absent',
     label: voteTypes[index]?.label ?? labels.absent,
   })) as SeatView[];
-}
-
-function getMissingSeats() {
-  const totalFromStats = Number(totals.present ?? 0) + Number(totals.absent ?? 0);
-  const expectedSeats = totalFromStats > 0 ? totalFromStats : rows.reduce((sum, [, count]) => sum + Number(count ?? 0), 0);
-  const missingCount = Math.max(0, Math.min(350, expectedSeats) - seatsByPosition.length);
-  if (missingCount === 0) return [];
-
-  return getFallbackHemicyclePositions(350)
-    .filter((_, index) => !usedSeats.has(String(index + 1)))
-    .slice(0, missingCount)
-    .map((position, index) => ({
-      ...position,
-      id: `missing-${index}`,
-      type: 'absent',
-      label: labels.absent,
-    })) as SeatView[];
 }
 
 function getSeatClass(voteType: VoteType) {
