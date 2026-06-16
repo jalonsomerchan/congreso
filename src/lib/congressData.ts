@@ -2,6 +2,15 @@ import { dataConfig, dataSections, type DataSectionId } from '../config/dataConf
 
 export type DataSection = (typeof dataSections)[number];
 export type DataRecord = Record<string, any>;
+export type VoteType = 'yes' | 'no' | 'abstentions' | 'absent';
+
+export type VoteSeatResult = {
+  seat: string | null;
+  deputy: string;
+  group: string;
+  vote: string;
+  voteType: VoteType;
+};
 
 const cache = new Map<string, Promise<any>>();
 
@@ -150,8 +159,8 @@ export function getVoteTotals(detail: any) {
     };
   }
 
-  const votes = detail?.data?.votaciones ?? detail?.votaciones;
-  if (!Array.isArray(votes)) return null;
+  const votes = getVoteItems(detail);
+  if (!votes.length) return null;
 
   return votes.reduce(
     (total, item) => {
@@ -166,9 +175,19 @@ export function getVoteTotals(detail: any) {
   );
 }
 
+export function getVoteSeatResults(detail: any): VoteSeatResult[] {
+  return getVoteItems(detail).map((vote) => ({
+    seat: String(vote.asiento ?? '').trim() || null,
+    deputy: String(vote.diputado ?? ''),
+    group: String(vote.grupo ?? ''),
+    vote: String(vote.voto ?? ''),
+    voteType: normalizeVote(vote.voto),
+  }));
+}
+
 export function getVotesByGroup(detail: any) {
-  const votes = detail?.data?.votaciones ?? detail?.votaciones;
-  if (!Array.isArray(votes)) return [];
+  const votes = getVoteItems(detail);
+  if (!votes.length) return [];
   const groups = new Map<string, { yes: number; no: number; abstentions: number; absent: number }>();
 
   votes.forEach((vote) => {
@@ -185,12 +204,17 @@ export function getVotesByGroup(detail: any) {
   return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0], 'es'));
 }
 
-function normalizeVote(value: unknown) {
+export function normalizeVote(value: unknown): VoteType {
   const vote = String(value ?? '').trim().toLocaleLowerCase('es');
   if (vote === 'sí' || vote === 'si' || vote === 'a favor' || vote === 'afavor') return 'yes';
   if (vote === 'no' || vote === 'en contra') return 'no';
   if (vote.startsWith('abst')) return 'abstentions';
   return 'absent';
+}
+
+function getVoteItems(detail: any): DataRecord[] {
+  const votes = detail?.data?.votaciones ?? detail?.votaciones;
+  return Array.isArray(votes) ? votes : [];
 }
 
 function humanizeId(value: unknown) {
