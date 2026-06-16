@@ -16,6 +16,9 @@ concurrency:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  ASTRO_SITE: https://jalonsomerchan.github.io
+  ASTRO_BASE: /congreso
+  PUBLIC_REPOSITORY_URL: https://github.com/jalonsomerchan/congreso
 
 jobs:
   build:
