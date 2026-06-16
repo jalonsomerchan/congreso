@@ -35,6 +35,7 @@
   "congress.vote.no": "No",
   "congress.vote.abstention": "Abstention",
   "congress.vote.absent": "Absent",
+  "congress.vote.unassigned": "Votes without assigned seat",
   "congress.empty.title": "No records yet",
   "congress.empty.section": "The public API does not contain records for this section right now.",
   "congress.sections.votes": "Votes",
