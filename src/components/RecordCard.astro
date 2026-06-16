@@ -27,6 +27,7 @@ const labels = {
   abstentions: t('congress.vote.abstention'),
   absent: t('congress.vote.absent'),
   title: t('congress.vote.hemicycle'),
+  unassigned: t('congress.vote.unassigned'),
 };
 ---
 
@@ -37,7 +38,7 @@ const labels = {
   </div>
   <h3><a href={detailUrl}>{title}</a></h3>
   <p>{description}</p>
-  {totals && <VoteHemicycle totals={totals} locale={localeCode} labels={labels} compact />}
+  {totals && <VoteHemicycle totals={totals} locale={localeCode} labels={labels} detail={detail} compact />}
   <div class="record-card__footer">
     <span>{record.legislature ?? record.grouping?.legislatures?.[0] ?? ''}</span>
     <a href={detailUrl}>{t('congress.viewDetail')}</a>
