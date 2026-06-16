@@ -2,8 +2,8 @@
 import { type Locale } from '../config/site';
 import { dataConfig, type DataSectionId } from '../config/dataConfig';
 import { getLocalizedPath, useTranslations } from '../i18n/ui';
-import { formatDate, getRecordDate, getRecordDescription, getRecordTitle, getVoteTotals, type DataRecord } from '../lib/congressData';
-import VoteHemicycle from './VoteHemicycle.astro';
+import { formatDate, getRecordDate, getRecordDescription, getRecordTitle, getVoteCardContent, getVoteTotals, isVoteApproved, type DataRecord } from '../lib/congressData';
+import VoteResultsSummary from './VoteResultsSummary.astro';
 
 interface Props {
   locale: Locale;
@@ -17,28 +17,49 @@ interface Props {
 
 const { locale, localeCode, sectionId, sectionLabel, sectionSingular, record, detail = null } = Astro.props;
 const t = useTranslations(locale);
-const title = getRecordTitle(record, detail, sectionLabel);
-const description = getRecordDescription(record, detail) || t('congress.noDescription');
 const detailUrl = getLocalizedPath(`/${sectionId}/${record.id}/`, locale);
-const totals = sectionId === dataConfig.voteBlock ? getVoteTotals(detail) : null;
+const isVoteCard = sectionId === dataConfig.voteBlock;
+const title = isVoteCard ? getVoteCardContent(record, detail).title : getRecordTitle(record, detail, sectionLabel);
+const description = getRecordDescription(record, detail) || t('congress.noDescription');
+const voteCardContent = isVoteCard ? getVoteCardContent(record, detail) : null;
+const totals = isVoteCard ? getVoteTotals(detail) : null;
+const approved = isVoteCard ? isVoteApproved(detail) : false;
+const searchText = [
+  title,
+  voteCardContent?.subtitle,
+  voteCardContent?.subsubtitle,
+  record.id,
+  record.official_filename,
+  record.legislature,
+].filter(Boolean).join(' ');
 const labels = {
   yes: t('congress.vote.yes'),
   no: t('congress.vote.no'),
   abstentions: t('congress.vote.abstention'),
-  absent: t('congress.vote.absent'),
-  title: t('congress.vote.hemicycle'),
-  unassigned: t('congress.vote.unassigned'),
 };
 ---
 
-<article class:list={['record-card', `record-card--${sectionId}`]}>
+<article class:list={['record-card', `record-card--${sectionId}`]} data-vote-card={isVoteCard ? '' : undefined} data-search-text={isVoteCard ? searchText : undefined}>
   <div class="record-card__meta">
     <span>{sectionSingular}</span>
     <span>{formatDate(getRecordDate(record), localeCode)}</span>
   </div>
-  <h3><a href={detailUrl}>{title}</a></h3>
-  <p>{description}</p>
-  {totals && <VoteHemicycle totals={totals} locale={localeCode} labels={labels} detail={detail} compact />}
+  {isVoteCard ? (
+    <>
+      <div class="record-card__vote-title">
+        <span class:list={['record-card__status-dot', approved ? 'record-card__status-dot--approved' : 'record-card__status-dot--rejected']} aria-hidden="true"></span>
+        <h3><a href={detailUrl}>{title}</a></h3>
+      </div>
+      {voteCardContent?.subtitle && <p class="record-card__subtitle">{voteCardContent.subtitle}</p>}
+      {voteCardContent?.subsubtitle && <p class="record-card__subsubtitle">{voteCardContent.subsubtitle}</p>}
+      {totals && <VoteResultsSummary totals={totals} locale={localeCode} labels={labels} />}
+    </>
+  ) : (
+    <>
+      <h3><a href={detailUrl}>{title}</a></h3>
+      <p>{description}</p>
+    </>
+  )}
   <div class="record-card__footer">
     <span>{record.legislature ?? record.grouping?.legislatures?.[0] ?? ''}</span>
     <a href={detailUrl}>{t('congress.viewDetail')}</a>

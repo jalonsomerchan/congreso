@@ -1,0 +1,69 @@
+---
+import { useTranslations, type TranslationKey } from '../i18n/ui';
+import type { Locale } from '../config/site';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+---
+
+<div
+  class="vote-search"
+  data-vote-search
+  data-result-label={t('congress.search.resultsLabel')}
+  data-result-label-singular={t('congress.search.resultsLabelSingular')}
+  data-empty-label={t('congress.search.empty')}
+>
+  <label class="vote-search__label" for="vote-search-input">{t('congress.search.label')}</label>
+  <input
+    id="vote-search-input"
+    class="vote-search__input"
+    type="search"
+    name="q"
+    placeholder={t('congress.search.placeholder')}
+    autocomplete="off"
+    data-vote-search-input
+  />
+  <p class="vote-search__hint" data-vote-search-status>
+    {t('congress.search.hint')}
+  </p>
+</div>
+
+<script>
+  const root = document.querySelector('[data-vote-search]');
+  const input = root?.querySelector('[data-vote-search-input]');
+  const status = root?.querySelector('[data-vote-search-status]');
+  const cards = [...document.querySelectorAll('[data-vote-card]')];
+
+  if (root instanceof HTMLElement && input instanceof HTMLInputElement && status instanceof HTMLElement && cards.length > 0) {
+    const total = cards.length;
+    const resultLabel = root.dataset.resultLabel ?? '';
+    const resultLabelSingular = root.dataset.resultLabelSingular ?? resultLabel;
+    const emptyLabel = root.dataset.emptyLabel ?? '';
+    const formatResultLabel = (count) => `${count} ${count === 1 ? resultLabelSingular : resultLabel}`.trim();
+
+    const update = () => {
+      const query = input.value.trim().toLocaleLowerCase();
+      let visible = 0;
+
+      cards.forEach((card) => {
+        const text = card.getAttribute('data-search-text')?.toLocaleLowerCase() ?? '';
+        const match = query.length === 0 || text.includes(query);
+        card.toggleAttribute('hidden', !match);
+        if (match) visible += 1;
+      });
+
+      status.textContent = query.length === 0
+        ? formatResultLabel(total)
+        : visible > 0
+          ? formatResultLabel(visible)
+          : emptyLabel;
+    };
+
+    input.addEventListener('input', update);
+    update();
+  }
+</script>

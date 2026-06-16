@@ -1,0 +1,53 @@
+---
+import { formatNumber, type VoteDeputy } from '../lib/congressData';
+
+interface Props {
+  deputies: VoteDeputy[];
+  locale: string;
+  labels: {
+    title: string;
+    seat: string;
+    deputy: string;
+    group: string;
+    vote: string;
+    empty: string;
+  };
+}
+
+const { deputies, locale, labels } = Astro.props;
+---
+
+<article class="detail-card detail-card--wide">
+  <div class="detail-card__header">
+    <div>
+      <h2>{labels.title}</h2>
+      <p>{formatNumber(deputies.length, locale)}</p>
+    </div>
+  </div>
+  {deputies.length > 0 ? (
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>{labels.seat}</th>
+            <th>{labels.deputy}</th>
+            <th>{labels.group}</th>
+            <th>{labels.vote}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {deputies.map((item) => (
+            <tr>
+              <td>{item.seat || '—'}</td>
+              <td>{item.deputy || '—'}</td>
+              <td>{item.group || '—'}</td>
+              <td><span class:list={['vote-tag', `vote-tag--${item.voteType}`]}>{item.vote || '—'}</span></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  ) : (
+    <p>{labels.empty}</p>
+  )}
+</article>

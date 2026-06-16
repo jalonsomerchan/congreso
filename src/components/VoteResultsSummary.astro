@@ -1,0 +1,30 @@
+---
+import { formatNumber, type VoteTotals } from '../lib/congressData';
+
+interface Props {
+  totals: VoteTotals;
+  locale: string;
+  labels: {
+    yes: string;
+    no: string;
+    abstentions: string;
+  };
+}
+
+const { totals, locale, labels } = Astro.props;
+
+const items = [
+  ['yes', labels.yes, totals.yes],
+  ['no', labels.no, totals.no],
+  ['abstention', labels.abstentions, totals.abstentions],
+] as const;
+---
+
+<div class="vote-summary" aria-label={`${labels.yes}, ${labels.no}, ${labels.abstentions}`}>
+  {items.map(([tone, label, value]) => (
+    <div class:list={['vote-pill', `vote-pill--${tone}`]}>
+      <span>{label}</span>
+      <strong>{formatNumber(value, locale)}</strong>
+    </div>
+  ))}
+</div>

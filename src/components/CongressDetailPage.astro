@@ -2,8 +2,9 @@
 import { dataConfig, getDataSection, type DataSectionId } from '../config/dataConfig';
 import { type Locale } from '../config/site';
 import { getLocalizedPath, useTranslations, type TranslationKey } from '../i18n/ui';
-import { formatDate, formatNumber, getRecordDate, getRecordDescription, getRecordTitle, getVoteTotals, getVotesByGroup, type DataRecord } from '../lib/congressData';
+import { formatDate, formatNumber, getRecordDate, getRecordDescription, getRecordTitle, getVoteTotals, getVotesByDeputy, getVotesByGroup, type DataRecord } from '../lib/congressData';
 import VoteHemicycle from './VoteHemicycle.astro';
+import VoteDeputiesTable from './VoteDeputiesTable.astro';
 
 interface Props {
   locale: Locale;
@@ -21,6 +22,7 @@ const title = getRecordTitle(record, detail, sectionLabel);
 const description = getRecordDescription(record, detail) || t('congress.noDescription');
 const totals = sectionId === dataConfig.voteBlock ? getVoteTotals(detail) : null;
 const votesByGroup = totals ? getVotesByGroup(detail) : [];
+const votesByDeputy = totals ? getVotesByDeputy(detail) : [];
 const labels = {
   yes: t('congress.vote.yes'),
   no: t('congress.vote.no'),
@@ -75,6 +77,21 @@ const metadata = [
           </div>
         )}
       </article>
+    )}
+
+    {totals && (
+      <VoteDeputiesTable
+        deputies={votesByDeputy}
+        locale={localeCode}
+        labels={{
+          title: t('congress.vote.byDeputy'),
+          seat: t('congress.vote.seat'),
+          deputy: t('congress.vote.deputy'),
+          group: t('congress.group'),
+          vote: t('congress.vote.label'),
+          empty: t('congress.vote.noDeputies'),
+        }}
+      />
     )}
 
     <article class="detail-card detail-card--wide">

@@ -14,7 +14,10 @@ describe('data app structure', () => {
       'src/components/CongressListPage.astro',
       'src/components/CongressDetailPage.astro',
       'src/components/RecordCard.astro',
+      'src/components/VoteDeputiesTable.astro',
       'src/components/VoteHemicycle.astro',
+      'src/components/VoteResultsSummary.astro',
+      'src/components/VoteSearch.astro',
       'src/config/dataConfig.ts',
       'src/lib/congressData.ts',
       'src/lib/hemicycleLayout.ts',
@@ -29,7 +32,7 @@ describe('data app structure', () => {
     const es = readJson('src/i18n/translations/es.json');
     const en = readJson('src/i18n/translations/en.json');
 
-    ['congress.home.latestVotes', 'congress.home.latestInitiatives', 'congress.home.latestSpeeches', 'congress.vote.hemicycle', 'congress.vote.unassigned'].forEach((key) => {
+    ['congress.home.latestVotes', 'congress.home.latestInitiatives', 'congress.home.latestSpeeches', 'congress.vote.hemicycle', 'congress.vote.unassigned', 'congress.vote.byDeputy', 'congress.search.label'].forEach((key) => {
       assert.ok(es[key], `${key} should exist in es.json`);
       assert.ok(en[key], `${key} should exist in en.json`);
     });

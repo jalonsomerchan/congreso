@@ -12,6 +12,28 @@ export type VoteSeatResult = {
   voteType: VoteType;
 };
 
+export type VoteTotals = {
+  yes: number;
+  no: number;
+  abstentions: number;
+  absent: number;
+  present: number;
+};
+
+export type VoteCardContent = {
+  title: string;
+  subtitle: string;
+  subsubtitle: string;
+};
+
+export type VoteDeputy = {
+  seat: string;
+  deputy: string;
+  group: string;
+  vote: string;
+  voteType: VoteType;
+};
+
 const cache = new Map<string, Promise<any>>();
 
 export async function fetchData(path: string) {
@@ -156,7 +178,7 @@ export function getVoteTotals(detail: any) {
       abstentions: totals.abstenciones ?? 0,
       absent: totals.noVotan ?? totals.ausentes ?? 0,
       present: totals.presentes ?? 0,
-    };
+    } satisfies VoteTotals;
   }
 
   const votes = getVoteItems(detail);
@@ -171,8 +193,33 @@ export function getVoteTotals(detail: any) {
       else total.absent += 1;
       return total;
     },
-    { yes: 0, no: 0, abstentions: 0, absent: 0, present: votes.length }
+    { yes: 0, no: 0, abstentions: 0, absent: 0, present: votes.length } satisfies VoteTotals
   );
+}
+
+export function getVoteCardContent(record: DataRecord, detail: any): VoteCardContent {
+  const info = detail?.data?.informacion ?? detail?.informacion ?? {};
+  return {
+    title: String(info.titulo ?? record.official_name ?? record.official_filename ?? humanizeId(record.id)),
+    subtitle: String(info.textoSubGrupo ?? ''),
+    subsubtitle: String(info.tituloSubGrupo ?? ''),
+  };
+}
+
+export function isVoteApproved(detail: any) {
+  const info = detail?.data?.informacion ?? detail?.informacion ?? {};
+  const explicitValue = [info.aprobada, info.aprobado, info.resultado, info.resultadoVotacion].find((value) => value !== undefined && value !== null);
+  if (typeof explicitValue === 'boolean') return explicitValue;
+
+  const explicitText = String(explicitValue ?? '').trim().toLocaleLowerCase('es');
+  if (explicitText) {
+    if (/(aprob|affirm|pass|accepted)/.test(explicitText)) return true;
+    if (/(rechaz|deneg|no aprob|fail|defeat)/.test(explicitText)) return false;
+  }
+
+  const totals = getVoteTotals(detail);
+  if (!totals) return false;
+  return totals.yes > totals.no;
 }
 
 export function getVoteSeatResults(detail: any): VoteSeatResult[] {
@@ -202,6 +249,22 @@ export function getVotesByGroup(detail: any) {
   });
 
   return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0], 'es'));
+}
+
+export function getVotesByDeputy(detail: any): VoteDeputy[] {
+  return getVoteItems(detail)
+    .map((vote) => ({
+      seat: String(vote.asiento ?? vote.numeroAsiento ?? '').trim(),
+      deputy: String(vote.diputado ?? vote.nombreDiputado ?? vote.parlamentario ?? '').trim(),
+      group: String(vote.grupo ?? vote.grupoParlamentario ?? '').trim(),
+      vote: String(vote.voto ?? '').trim(),
+      voteType: normalizeVote(vote.voto),
+    }))
+    .sort((a, b) => {
+      const groupOrder = a.group.localeCompare(b.group, 'es');
+      if (groupOrder !== 0) return groupOrder;
+      return a.deputy.localeCompare(b.deputy, 'es');
+    });
 }
 
 export function normalizeVote(value: unknown): VoteType {

@@ -2,8 +2,9 @@
 import { dataSections, getDataSection, type DataSectionId } from '../config/dataConfig';
 import { type Locale } from '../config/site';
 import { getLocalizedPath, useTranslations, type TranslationKey } from '../i18n/ui';
-import { formatNumber, getAllSectionRecords, sortRecords } from '../lib/congressData';
+import { formatNumber, getAllSectionRecords, sortRecords, withRecordDetails } from '../lib/congressData';
 import RecordCard from './RecordCard.astro';
+import VoteSearch from './VoteSearch.astro';
 
 interface Props {
   locale: Locale;
@@ -17,6 +18,9 @@ const section = getDataSection(sectionId);
 const sectionLabel = t(section.titleKey as TranslationKey);
 const sectionSingular = t(section.singularKey as TranslationKey);
 const records = sortRecords(await getAllSectionRecords(sectionId));
+const listItems = sectionId === 'votaciones'
+  ? await withRecordDetails(records)
+  : records.map((record) => ({ record, detail: null }));
 const sections = dataSections.map((item) => ({ ...item, title: t(item.titleKey as TranslationKey), url: getLocalizedPath(`/${item.id}/`, locale) }));
 ---
 
@@ -48,10 +52,11 @@ const sections = dataSections.map((item) => ({ ...item, title: t(item.titleKey a
         <h2 id="records-title">{sectionLabel}</h2>
       </div>
     </div>
+    {sectionId === 'votaciones' && <VoteSearch locale={locale} />}
     <div class="records-grid records-grid--list">
-      {records.length > 0 ? (
-        records.map((record) => (
-          <RecordCard locale={locale} localeCode={localeCode} sectionId={sectionId} sectionLabel={sectionLabel} sectionSingular={sectionSingular} record={record} />
+      {listItems.length > 0 ? (
+        listItems.map(({ record, detail }) => (
+          <RecordCard locale={locale} localeCode={localeCode} sectionId={sectionId} sectionLabel={sectionLabel} sectionSingular={sectionSingular} record={record} detail={detail} />
         ))
       ) : (
         <article class="empty-card"><h3>{t('congress.empty.title')}</h3><p>{t('congress.empty.section')}</p></article>

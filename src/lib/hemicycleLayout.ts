@@ -10,23 +10,23 @@ type Sector = {
 };
 
 const VIEW_CENTER_X = 500;
-const VIEW_CENTER_Y = 585;
+const VIEW_CENTER_Y = 592;
 const SECTOR_BY_ZONE: Record<number, Sector> = {
-  1: { start: 164, end: 108 },
-  2: { start: 125, end: 68 },
-  3: { start: 82, end: 26 },
-  4: { start: 188, end: 150 },
-  5: { start: 30, end: -8 },
+  1: { start: 167, end: 113 },
+  2: { start: 135, end: 75 },
+  3: { start: 85, end: 25 },
+  4: { start: 202, end: 154 },
+  5: { start: 27, end: -21 },
 };
 
 const RADIUS_BY_ROW: Record<number, number> = {
-  2: 155,
-  3: 190,
-  4: 225,
-  5: 260,
-  6: 295,
-  7: 330,
-  8: 365,
+  2: 166,
+  3: 202,
+  4: 238,
+  5: 274,
+  6: 310,
+  7: 346,
+  8: 382,
 };
 
 const CAPACITY_BY_ROW: Record<number, number> = {
@@ -83,16 +83,16 @@ function getFrontBenchPosition(seatNumber: number): SeatPosition {
   const row = seatNumber <= 8 ? 0 : seatNumber <= 16 ? 1 : 2;
   const index = row === 0 ? seatNumber - 1 : row === 1 ? seatNumber - 9 : seatNumber - 17;
   const capacity = row === 2 ? 6 : 8;
-  const start = row === 2 ? 220 : 205;
-  const end = row === 2 ? 320 : 335;
-  const radius = row === 0 ? 105 : row === 1 ? 138 : 170;
+  const start = row === 2 ? 226 : 214;
+  const end = row === 2 ? 314 : 326;
+  const radius = row === 0 ? 112 : row === 1 ? 148 : 184;
   const progress = capacity === 1 ? 0.5 : index / (capacity - 1);
   const angle = interpolate(start, end, progress);
   const radians = toRadians(angle);
 
   return {
     x: 500 + Math.cos(radians) * radius,
-    y: 402 + Math.sin(radians) * radius,
+    y: 396 + Math.sin(radians) * radius,
     row,
   };
 }
