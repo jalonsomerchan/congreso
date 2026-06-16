@@ -1,0 +1,61 @@
+---
+import { dataConfig, dataSections } from '../config/dataConfig';
+import { type Locale } from '../config/site';
+import { getLocalizedPath, useTranslations, type TranslationKey } from '../i18n/ui';
+import { getHomeData } from '../lib/congressData';
+import RecordCard from './RecordCard.astro';
+
+interface Props {
+  locale: Locale;
+  repositoryUrl: string;
+}
+
+const { locale, repositoryUrl } = Astro.props;
+const t = useTranslations(locale);
+const localeCode = locale === 'en' ? 'en-GB' : 'es-ES';
+const homeData = await getHomeData();
+const sections = dataSections.map((section) => ({
+  ...section,
+  title: t(section.titleKey as TranslationKey),
+  singular: t(section.singularKey as TranslationKey),
+  description: t(section.descriptionKey as TranslationKey),
+  homeTitle: t(section.homeTitleKey as TranslationKey),
+  url: getLocalizedPath(`/${section.id}/`, locale),
+}));
+---
+
+<div class="open-data">
+  <section class="open-data__hero" aria-labelledby="home-title">
+    <p class="open-data__eyebrow">{t('home.eyebrow')}</p>
+    <h1 id="home-title">{t('home.title')}</h1>
+    <p class="open-data__lead">{t('home.description')}</p>
+    <div class="open-data__actions">
+      {sections.map((section) => <a class="button-link" href={section.url}>{section.title}</a>)}
+      <a class="button-link button-link--ghost" href={dataConfig.apiBaseUrl}>{t('congress.apiLink')}</a>
+      <a class="button-link button-link--ghost" href={repositoryUrl}>{t('home.repository')}</a>
+    </div>
+    <p class="open-data__status">{t('congress.currentTerm')}: <strong>{dataConfig.currentGroupId}</strong></p>
+  </section>
+
+  {sections.map((section) => (
+    <section class="open-data__section" aria-labelledby={`${section.id}-title`}>
+      <div class="section-heading">
+        <div>
+          <p class="open-data__eyebrow">{section.title}</p>
+          <h2 id={`${section.id}-title`}>{section.homeTitle}</h2>
+          <p>{section.description}</p>
+        </div>
+        <a class="section-heading__link" href={section.url}>{t('congress.viewAll')}</a>
+      </div>
+      <div class="records-grid">
+        {homeData[section.id].length > 0 ? (
+          homeData[section.id].map(({ record, detail }) => (
+            <RecordCard locale={locale} localeCode={localeCode} sectionId={section.id} sectionLabel={section.title} sectionSingular={section.singular} record={record} detail={detail} />
+          ))
+        ) : (
+          <article class="empty-card"><h3>{t('congress.empty.title')}</h3><p>{t('congress.empty.section')}</p></article>
+        )}
+      </div>
+    </section>
+  ))}
+</div>

@@ -1,0 +1,45 @@
+---
+import { type Locale } from '../config/site';
+import { dataConfig, type DataSectionId } from '../config/dataConfig';
+import { getLocalizedPath, useTranslations } from '../i18n/ui';
+import { formatDate, getRecordDate, getRecordDescription, getRecordTitle, getVoteTotals, type DataRecord } from '../lib/congressData';
+import VoteHemicycle from './VoteHemicycle.astro';
+
+interface Props {
+  locale: Locale;
+  localeCode: string;
+  sectionId: DataSectionId;
+  sectionLabel: string;
+  sectionSingular: string;
+  record: DataRecord;
+  detail?: any;
+}
+
+const { locale, localeCode, sectionId, sectionLabel, sectionSingular, record, detail = null } = Astro.props;
+const t = useTranslations(locale);
+const title = getRecordTitle(record, detail, sectionLabel);
+const description = getRecordDescription(record, detail) || t('congress.noDescription');
+const detailUrl = getLocalizedPath(`/${sectionId}/${record.id}/`, locale);
+const totals = sectionId === dataConfig.voteBlock ? getVoteTotals(detail) : null;
+const labels = {
+  yes: t('congress.vote.yes'),
+  no: t('congress.vote.no'),
+  abstentions: t('congress.vote.abstention'),
+  absent: t('congress.vote.absent'),
+  title: t('congress.vote.hemicycle'),
+};
+---
+
+<article class:list={['record-card', `record-card--${sectionId}`]}>
+  <div class="record-card__meta">
+    <span>{sectionSingular}</span>
+    <span>{formatDate(getRecordDate(record), localeCode)}</span>
+  </div>
+  <h3><a href={detailUrl}>{title}</a></h3>
+  <p>{description}</p>
+  {totals && <VoteHemicycle totals={totals} locale={localeCode} labels={labels} compact />}
+  <div class="record-card__footer">
+    <span>{record.legislature ?? record.grouping?.legislatures?.[0] ?? ''}</span>
+    <a href={detailUrl}>{t('congress.viewDetail')}</a>
+  </div>
+</article>

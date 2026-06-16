@@ -1,0 +1,23 @@
+---
+import CongressDetailPage from '../../components/CongressDetailPage.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { defaultLocale } from '../../config/site';
+import { getDataSection, type DataSectionId } from '../../config/dataConfig';
+import { useTranslations, type TranslationKey } from '../../i18n/ui';
+import { getDetailPaths, getRecordDescription, getRecordTitle, type DataRecord } from '../../lib/congressData';
+
+export async function getStaticPaths() {
+  return getDetailPaths();
+}
+
+const locale = defaultLocale;
+const t = useTranslations(locale);
+const sectionId = Astro.props.sectionId as DataSectionId;
+const section = getDataSection(sectionId);
+const record = Astro.props.record as DataRecord;
+const detail = Astro.props.detail;
+---
+
+<BaseLayout title={getRecordTitle(record, detail, t(section.detailTitleKey as TranslationKey))} description={getRecordDescription(record, detail) || t(section.descriptionKey as TranslationKey)} locale={locale}>
+  <CongressDetailPage locale={locale} sectionId={sectionId} record={record} detail={detail} />
+</BaseLayout>

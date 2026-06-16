@@ -1,0 +1,61 @@
+---
+import { dataSections, getDataSection, type DataSectionId } from '../config/dataConfig';
+import { type Locale } from '../config/site';
+import { getLocalizedPath, useTranslations, type TranslationKey } from '../i18n/ui';
+import { formatNumber, getAllSectionRecords, sortRecords } from '../lib/congressData';
+import RecordCard from './RecordCard.astro';
+
+interface Props {
+  locale: Locale;
+  sectionId: DataSectionId;
+}
+
+const { locale, sectionId } = Astro.props;
+const t = useTranslations(locale);
+const localeCode = locale === 'en' ? 'en-GB' : 'es-ES';
+const section = getDataSection(sectionId);
+const sectionLabel = t(section.titleKey as TranslationKey);
+const sectionSingular = t(section.singularKey as TranslationKey);
+const records = sortRecords(await getAllSectionRecords(sectionId));
+const sections = dataSections.map((item) => ({ ...item, title: t(item.titleKey as TranslationKey), url: getLocalizedPath(`/${item.id}/`, locale) }));
+---
+
+<div class="open-data">
+  <section class="open-data__hero open-data__hero--compact" aria-labelledby="list-title">
+    <p class="open-data__eyebrow">{sectionLabel}</p>
+    <h1 id="list-title">{t(section.listTitleKey as TranslationKey)}</h1>
+    <p class="open-data__lead">{t(section.descriptionKey as TranslationKey)}</p>
+    <nav class="open-data__actions" aria-label={t('congress.sectionNavigation')}>
+      <a class="button-link button-link--ghost" href={getLocalizedPath('/', locale)}>{t('nav.home')}</a>
+      {sections.map((item) => <a class:list={['button-link', item.id === sectionId ? 'button-link--active' : '']} href={item.url}>{item.title}</a>)}
+    </nav>
+  </section>
+
+  <section class="open-data__section" aria-labelledby="stats-title">
+    <div class="section-heading section-heading--compact">
+      <div>
+        <p class="open-data__eyebrow" id="stats-title">{t('congress.records')}</p>
+        <h2>{formatNumber(records.length, localeCode)} {t('congress.records').toLowerCase()}</h2>
+        <p>{t('congress.listDescription')}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="open-data__section" aria-labelledby="records-title">
+    <div class="section-heading section-heading--compact">
+      <div>
+        <p class="open-data__eyebrow">{t('congress.allTerms')}</p>
+        <h2 id="records-title">{sectionLabel}</h2>
+      </div>
+    </div>
+    <div class="records-grid records-grid--list">
+      {records.length > 0 ? (
+        records.map((record) => (
+          <RecordCard locale={locale} localeCode={localeCode} sectionId={sectionId} sectionLabel={sectionLabel} sectionSingular={sectionSingular} record={record} />
+        ))
+      ) : (
+        <article class="empty-card"><h3>{t('congress.empty.title')}</h3><p>{t('congress.empty.section')}</p></article>
+      )}
+    </div>
+  </section>
+</div>

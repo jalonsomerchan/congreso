@@ -1,0 +1,85 @@
+---
+import { dataConfig, getDataSection, type DataSectionId } from '../config/dataConfig';
+import { type Locale } from '../config/site';
+import { getLocalizedPath, useTranslations, type TranslationKey } from '../i18n/ui';
+import { formatDate, formatNumber, getRecordDate, getRecordDescription, getRecordTitle, getVoteTotals, getVotesByGroup, type DataRecord } from '../lib/congressData';
+import VoteHemicycle from './VoteHemicycle.astro';
+
+interface Props {
+  locale: Locale;
+  sectionId: DataSectionId;
+  record: DataRecord;
+  detail: any;
+}
+
+const { locale, sectionId, record, detail } = Astro.props;
+const t = useTranslations(locale);
+const localeCode = locale === 'en' ? 'en-GB' : 'es-ES';
+const section = getDataSection(sectionId);
+const sectionLabel = t(section.titleKey as TranslationKey);
+const title = getRecordTitle(record, detail, sectionLabel);
+const description = getRecordDescription(record, detail) || t('congress.noDescription');
+const totals = sectionId === dataConfig.voteBlock ? getVoteTotals(detail) : null;
+const votesByGroup = totals ? getVotesByGroup(detail) : [];
+const labels = {
+  yes: t('congress.vote.yes'),
+  no: t('congress.vote.no'),
+  abstentions: t('congress.vote.abstention'),
+  absent: t('congress.vote.absent'),
+  title: t('congress.vote.hemicycle'),
+};
+const metadata = [
+  [t('congress.id'), record.id],
+  [t('congress.date'), formatDate(getRecordDate(record), localeCode)],
+  [t('congress.term'), record.legislature ?? record.grouping?.legislatures?.join(', ')],
+  [t('congress.session'), record.session],
+  [t('congress.file'), record.official_filename],
+];
+---
+
+<div class="open-data">
+  <section class="open-data__hero open-data__hero--compact" aria-labelledby="detail-title">
+    <p class="open-data__eyebrow">{sectionLabel}</p>
+    <h1 id="detail-title">{title}</h1>
+    <p class="open-data__lead">{description}</p>
+    <div class="open-data__actions">
+      <a class="button-link button-link--ghost" href={getLocalizedPath(`/${sectionId}/`, locale)}>{t('congress.backToList')}</a>
+      {record.source_url && <a class="button-link button-link--ghost" href={record.source_url}>{t('congress.officialSource')}</a>}
+    </div>
+  </section>
+
+  <section class="open-data__section detail-layout">
+    <article class="detail-card">
+      <h2>{t('congress.mainData')}</h2>
+      <dl class="metadata-grid">
+        {metadata.map(([label, value]) => <div><dt>{label}</dt><dd>{value ?? '—'}</dd></div>)}
+      </dl>
+    </article>
+
+    {totals && (
+      <article class="detail-card">
+        <h2>{t('congress.voteResult')}</h2>
+        <VoteHemicycle totals={totals} locale={localeCode} labels={labels} />
+        {votesByGroup.length > 0 && (
+          <div class="table-wrap">
+            <table>
+              <caption>{t('congress.vote.byGroup')}</caption>
+              <thead><tr><th>{t('congress.group')}</th><th>{labels.yes}</th><th>{labels.no}</th><th>{labels.abstentions}</th><th>{labels.absent}</th></tr></thead>
+              <tbody>
+                {votesByGroup.map(([group, values]) => (
+                  <tr><th>{group}</th><td>{formatNumber(values.yes, localeCode)}</td><td>{formatNumber(values.no, localeCode)}</td><td>{formatNumber(values.abstentions, localeCode)}</td><td>{formatNumber(values.absent, localeCode)}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </article>
+    )}
+
+    <article class="detail-card detail-card--wide">
+      <h2>{t('congress.completeData')}</h2>
+      <p>{t('congress.completeDataDescription')}</p>
+      <pre>{JSON.stringify({ record, detail }, null, 2)}</pre>
+    </article>
+  </section>
+</div>
