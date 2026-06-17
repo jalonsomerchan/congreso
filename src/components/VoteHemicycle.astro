@@ -25,6 +25,7 @@ interface Props {
   };
   detail?: any;
   compact?: boolean;
+  showStats?: boolean;
 }
 
 type SeatVote = {
@@ -34,7 +35,7 @@ type SeatVote = {
   vote: string;
 };
 
-const { totals, locale, labels, detail = null, compact = false } = Astro.props;
+const { totals, locale, labels, detail = null, compact = false, showStats = true } = Astro.props;
 const voteSeats = getVoteSeatResults(detail);
 const officialSeatPositions = await getOfficialHemicycleSeatPositionsList();
 const officialPositions = await Promise.all(
@@ -72,12 +73,12 @@ function isTelematicSeat(seat: string | null) {
 ---
 
 <div class:list={['vote-panel', compact && 'vote-panel--compact']}>
-  <div class="vote-panel__stats">
+  {showStats && <div class="vote-panel__stats">
     <div class="vote-stat vote-stat--yes"><span>{labels.yes}</span><strong>{formatNumber(totals.yes, locale)}</strong></div>
     <div class="vote-stat vote-stat--no"><span>{labels.no}</span><strong>{formatNumber(totals.no, locale)}</strong></div>
     <div class="vote-stat vote-stat--abstention"><span>{labels.abstentions}</span><strong>{formatNumber(totals.abstentions, locale)}</strong></div>
     <div class="vote-stat vote-stat--absent"><span>{labels.absent}</span><strong>{formatNumber(totals.absent, locale)}</strong></div>
-  </div>
+  </div>}
   <figure class="hemicycle" aria-label={labels.title}>
     <svg class="hemicycle__map" viewBox="0 0 536 393" role="img">
       <title>{labels.title}</title>

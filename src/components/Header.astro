@@ -1,5 +1,6 @@
 ---
 import Container from './Container.astro';
+import { dataConfig } from '../config/dataConfig';
 import { localeLabels, siteConfig, type Locale } from '../config/site';
 import { getAlternateLocales, getLocalizedPath, useTranslations } from '../i18n/ui';
 
@@ -11,16 +12,31 @@ const { locale } = Astro.props;
 const t = useTranslations(locale);
 const homeUrl = getLocalizedPath('/', locale);
 const alternateLocales = getAlternateLocales(locale);
+const navItems = [
+  [t('congress.sections.votes'), getLocalizedPath('/votaciones/', locale)],
+  [t('congress.deputies.title'), getLocalizedPath('/diputados/', locale)],
+  [t('congress.legislature.statsTitle'), getLocalizedPath(`/legislaturas/${dataConfig.currentGroupId}/estadisticas/`, locale)],
+];
 ---
 
-<header class="border-b border-[var(--color-border)] bg-white/80 backdrop-blur">
-  <Container class="flex items-center justify-between py-4">
-    <a class="font-bold tracking-tight" href={homeUrl}>{siteConfig.name}</a>
-    <nav aria-label={t('nav.main')} class="flex items-center gap-4 text-sm text-[var(--color-muted)]">
-      <a class="hover:text-[var(--color-text)]" href={homeUrl}>{t('nav.home')}</a>
+<header class="site-header">
+  <Container class="site-header__inner">
+    <a class="site-brand" href={homeUrl} aria-label={siteConfig.name}>
+      <span class="site-brand__mark" aria-hidden="true">CD</span>
+      <span>
+        <strong>{siteConfig.name}</strong>
+        <small>{t('home.eyebrow')}</small>
+      </span>
+    </a>
+    <nav aria-label={t('nav.main')} class="site-nav">
+      <a href={homeUrl}>{t('nav.home')}</a>
+      {navItems.map(([label, href]) => <a href={href}>{label}</a>)}
+      <a href={dataConfig.apiBaseUrl}>{t('congress.apiLink')}</a>
+    </nav>
+    <nav aria-label={t('nav.main')} class="site-locale">
+      <button class="theme-toggle" type="button" data-theme-toggle>{t('nav.theme')}</button>
       {alternateLocales.map((alternateLocale) => (
         <a
-          class="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs hover:text-[var(--color-text)]"
           href={getLocalizedPath('/', alternateLocale)}
           hreflang={alternateLocale}
         >
@@ -30,3 +46,21 @@ const alternateLocales = getAlternateLocales(locale);
     </nav>
   </Container>
 </header>
+
+<script>
+  const root = document.documentElement;
+  const storedTheme = localStorage.getItem('theme');
+  if (storedTheme === 'dark') root.dataset.theme = 'dark';
+
+  document.querySelector('[data-theme-toggle]')?.addEventListener('click', () => {
+    const nextTheme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+    if (nextTheme === 'dark') {
+      root.dataset.theme = 'dark';
+      localStorage.setItem('theme', 'dark');
+      return;
+    }
+
+    delete root.dataset.theme;
+    localStorage.setItem('theme', 'light');
+  });
+</script>

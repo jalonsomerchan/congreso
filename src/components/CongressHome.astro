@@ -2,8 +2,9 @@
 import { dataConfig, dataSections } from '../config/dataConfig';
 import { type Locale } from '../config/site';
 import { getLocalizedPath, useTranslations, type TranslationKey } from '../i18n/ui';
-import { getHomeData } from '../lib/congressData';
+import { formatNumber, getHomeData, getVoteCardContent, getVoteTotals, getVotesByGroup } from '../lib/congressData';
 import RecordCard from './RecordCard.astro';
+import VoteHemicycle from './VoteHemicycle.astro';
 
 interface Props {
   locale: Locale;
@@ -14,6 +15,11 @@ const { locale, repositoryUrl } = Astro.props;
 const t = useTranslations(locale);
 const localeCode = locale === 'en' ? 'en-GB' : 'es-ES';
 const homeData = await getHomeData();
+const latestVote = homeData.votaciones[0];
+const latestTotals = latestVote ? getVoteTotals(latestVote.detail) : null;
+const latestVoteContent = latestVote ? getVoteCardContent(latestVote.record, latestVote.detail) : null;
+const latestVoteUrl = latestVote ? getLocalizedPath(`/votaciones/${latestVote.record.id}/`, locale) : getLocalizedPath('/votaciones/', locale);
+const groupRows = latestVote ? getVotesByGroup(latestVote.detail).slice(0, 6) : [];
 const sections = dataSections.map((section) => ({
   ...section,
   title: t(section.titleKey as TranslationKey),
@@ -22,24 +28,125 @@ const sections = dataSections.map((section) => ({
   homeTitle: t(section.homeTitleKey as TranslationKey),
   url: getLocalizedPath(`/${section.id}/`, locale),
 }));
+const secondarySections = sections.filter((section) => section.id !== dataConfig.voteBlock);
+const voteLabels = {
+  yes: t('congress.vote.yes'),
+  no: t('congress.vote.no'),
+  abstentions: t('congress.vote.abstention'),
+  absent: t('congress.vote.absent'),
+  title: t('congress.vote.hemicycle'),
+  noVote: t('congress.vote.noVote'),
+  telematic: t('congress.vote.telematic'),
+  unmapped: t('congress.vote.unmapped'),
+};
+const voteMetricItems = latestTotals ? [
+  ['yes', voteLabels.yes, latestTotals.yes],
+  ['no', voteLabels.no, latestTotals.no],
+  ['abstention', voteLabels.abstentions, latestTotals.abstentions],
+  ['absent', voteLabels.absent, latestTotals.absent],
+] as const : [];
+const voteTotal = latestTotals ? latestTotals.yes + latestTotals.no + latestTotals.abstentions + latestTotals.absent : 0;
+const voteListSection = sections.find((section) => section.id === dataConfig.voteBlock)!;
+
+function percent(value: number, total: number) {
+  return new Intl.NumberFormat(localeCode, { style: 'percent', maximumFractionDigits: 1 }).format(total === 0 ? 0 : value / total);
+}
+
+function groupPercent(values: { yes: number; no: number; abstentions: number; absent: number }) {
+  const total = values.yes + values.no + values.abstentions + values.absent;
+  return total === 0 ? percent(0, 1) : percent(values.yes, total);
+}
 ---
 
 <div class="open-data">
-  <section class="open-data__hero" aria-labelledby="home-title">
-    <p class="open-data__eyebrow">{t('home.eyebrow')}</p>
-    <h1 id="home-title">{t('home.title')}</h1>
-    <p class="open-data__lead">{t('home.description')}</p>
-    <div class="open-data__actions">
-      {sections.map((section) => <a class="button-link" href={section.url}>{section.title}</a>)}
-      <a class="button-link button-link--ghost" href={getLocalizedPath('/diputados/', locale)}>{t('congress.deputies.title')}</a>
-      <a class="button-link button-link--ghost" href={getLocalizedPath(`/legislaturas/${dataConfig.currentGroupId}/estadisticas/`, locale)}>{t('congress.legislature.statsTitle')}</a>
-      <a class="button-link button-link--ghost" href={dataConfig.apiBaseUrl}>{t('congress.apiLink')}</a>
-      <a class="button-link button-link--ghost" href={repositoryUrl}>{t('home.repository')}</a>
+  <section class="command-hero" aria-labelledby="home-title">
+    <div class="command-hero__copy">
+      <p class="open-data__eyebrow">{dataConfig.currentGroupId}</p>
+      <h1 id="home-title">{t('home.title')}</h1>
+      <p class="open-data__lead">{t('home.description')}</p>
+      <form class="command-search" action={getLocalizedPath('/votaciones/', locale)} method="get">
+        <label class="sr-only" for="home-vote-search">{t('congress.search.label')}</label>
+        <input id="home-vote-search" type="search" name="q" placeholder={t('congress.search.placeholder')} />
+        <button type="submit">{t('congress.search.action')}</button>
+      </form>
+      <div class="open-data__actions" aria-label={t('congress.sectionNavigation')}>
+        {sections.map((section) => <a class="button-link" href={section.url}>{section.title}</a>)}
+        <a class="button-link button-link--ghost" href={getLocalizedPath('/diputados/', locale)}>{t('congress.deputies.title')}</a>
+        <a class="button-link button-link--ghost" href={getLocalizedPath(`/legislaturas/${dataConfig.currentGroupId}/estadisticas/`, locale)}>{t('congress.legislature.statsTitle')}</a>
+      </div>
     </div>
-    <p class="open-data__status">{t('congress.currentTerm')}: <strong>{dataConfig.currentGroupId}</strong></p>
+
+    {latestTotals && (
+      <article class="command-hero__hemicycle">
+        <div class="detail-card__header">
+          <div>
+            <p class="open-data__eyebrow">{t('congress.vote.hemicycle')}</p>
+            <h2>{t('congress.home.latestVote')}</h2>
+          </div>
+          <a class="section-heading__link" href={latestVoteUrl}>{t('congress.viewDetail')}</a>
+        </div>
+        <VoteHemicycle totals={latestTotals} locale={localeCode} labels={voteLabels} detail={latestVote.detail} showStats={false} />
+        <p class="command-hero__caption">{latestVoteContent?.title}</p>
+      </article>
+    )}
   </section>
 
-  {sections.map((section) => (
+  {latestTotals && (
+    <section class="vote-command-strip" aria-label={t('congress.voteResult')}>
+      {voteMetricItems.map(([tone, label, value]) => (
+        <article class:list={['vote-command-stat', `vote-command-stat--${tone}`]}>
+          <span>{label}</span>
+          <strong>{formatNumber(value, localeCode)}</strong>
+          <small>{percent(value, voteTotal)}</small>
+        </article>
+      ))}
+    </section>
+  )}
+
+  <section class="dashboard-grid" aria-labelledby="latest-votes-title">
+    <article class="open-data__section dashboard-grid__main">
+      <div class="section-heading">
+        <div>
+          <p class="open-data__eyebrow">{voteListSection.title}</p>
+          <h2 id="latest-votes-title">{voteListSection.homeTitle}</h2>
+          <p>{voteListSection.description}</p>
+        </div>
+        <a class="section-heading__link" href={voteListSection.url}>{t('congress.viewAll')}</a>
+      </div>
+      <div class="records-grid records-grid--dashboard">
+        {homeData.votaciones.slice(0, 6).map(({ record, detail }) => (
+          <RecordCard locale={locale} localeCode={localeCode} sectionId={dataConfig.voteBlock} sectionLabel={voteListSection.title} sectionSingular={voteListSection.singular} record={record} detail={detail} />
+        ))}
+      </div>
+    </article>
+
+    <aside class="dashboard-grid__side">
+      {groupRows.length > 0 && (
+        <article class="detail-card">
+          <h2>{t('congress.stats.groupTrends')}</h2>
+          <div class="table-wrap table-wrap--flush">
+            <table>
+              <thead><tr><th>{t('congress.group')}</th><th>{voteLabels.yes}</th><th>{voteLabels.no}</th><th>%</th></tr></thead>
+              <tbody>
+                {groupRows.map(([group, values]) => (
+                  <tr><th>{group}</th><td>{formatNumber(values.yes, localeCode)}</td><td>{formatNumber(values.no, localeCode)}</td><td>{groupPercent(values)}</td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </article>
+      )}
+      <article class="detail-card command-links">
+        <h2>{t('congress.home.exploreTitle')}</h2>
+        <a href={getLocalizedPath('/diputados/', locale)}>{t('congress.deputies.title')}</a>
+        <a href={getLocalizedPath(`/legislaturas/${dataConfig.currentGroupId}/estadisticas/`, locale)}>{t('congress.legislature.statsTitle')}</a>
+        <a href={dataConfig.apiBaseUrl}>{t('congress.apiLink')}</a>
+        <a href={repositoryUrl}>{t('home.repository')}</a>
+      </article>
+    </aside>
+  </section>
+
+  {secondarySections.map((section) => (
     <section class="open-data__section" aria-labelledby={`${section.id}-title`}>
       <div class="section-heading">
         <div>
@@ -51,7 +158,7 @@ const sections = dataSections.map((section) => ({
       </div>
       <div class="records-grid">
         {homeData[section.id].length > 0 ? (
-          homeData[section.id].map(({ record, detail }) => (
+          homeData[section.id].slice(0, 3).map(({ record, detail }) => (
             <RecordCard locale={locale} localeCode={localeCode} sectionId={section.id} sectionLabel={section.title} sectionSingular={section.singular} record={record} detail={detail} />
           ))
         ) : (
