@@ -1,7 +1,6 @@
 ---
 import { formatNumber, getVoteSeatResults, type VoteType } from '../lib/congressData';
-import { getFallbackHemicyclePositions, getHemicycleSeatPosition, normalizeSeatId, type SeatPosition } from '../lib/hemicycleLayout';
-import { getOfficialHemicycleSeatPosition } from '../lib/officialHemicycle';
+import { getOfficialHemicycleSeatPosition, getOfficialHemicycleSeatPositionsList } from '../lib/officialHemicycle';
 
 interface Totals {
   yes: number;
@@ -20,68 +19,55 @@ interface Props {
     abstentions: string;
     absent: string;
     title: string;
-    unassigned: string;
+    noVote: string;
+    telematic: string;
+    unmapped: string;
   };
   detail?: any;
   compact?: boolean;
 }
 
-type SeatView = SeatPosition & {
-  id: string;
+type SeatVote = {
   type: 'yes' | 'no' | 'abstention' | 'absent';
-  label: string;
+  deputy: string;
+  group: string;
+  vote: string;
 };
 
 const { totals, locale, labels, detail = null, compact = false } = Astro.props;
 const voteSeats = getVoteSeatResults(detail);
+const officialSeatPositions = await getOfficialHemicycleSeatPositionsList();
 const officialPositions = await Promise.all(
   voteSeats.map(async (vote) => {
-    const officialPosition = await getOfficialHemicycleSeatPosition(vote.deputy);
-    return officialPosition ?? getHemicycleSeatPosition(vote.seat);
+    return getOfficialHemicycleSeatPosition(vote.deputy);
   })
 );
-const seatsByPosition = voteSeats
-  .map((vote, index) => {
-    const position = officialPositions[index];
-    const seatId = normalizeSeatId(vote.seat);
-    if (!position || !seatId) return null;
+const votesByPosition = new Map<string, SeatVote>();
+const telematicVotes = voteSeats.filter((vote) => isTelematicSeat(vote.seat)).length;
+const unmappedVotes = voteSeats.filter((vote, index) => !isTelematicSeat(vote.seat) && !officialPositions[index]).length;
 
-    return {
-      ...position,
-      id: seatId,
-      type: getSeatClass(vote.voteType),
-      label: [vote.seat, vote.deputy, vote.group, vote.vote].filter(Boolean).join(' · '),
-    };
-  })
-  .filter(Boolean) as SeatView[];
+voteSeats.forEach((vote, index) => {
+  const position = officialPositions[index];
+  if (!position) return;
 
-const fallbackSeats = seatsByPosition.length === 0 ? getFallbackSeats() : [];
-const seats = [...seatsByPosition, ...fallbackSeats];
-const unassignedVotes = voteSeats.filter((vote, index) => !normalizeSeatId(vote.seat) || !officialPositions[index]).length;
-const rows = [
-  ['yes', totals.yes, labels.yes],
-  ['no', totals.no, labels.no],
-  ['abstention', totals.abstentions, labels.abstentions],
-  ['absent', totals.absent, labels.absent],
-] as const;
-
-function getFallbackSeats() {
-  const maxSeats = compact ? 140 : 350;
-  const total = Math.max(rows.reduce((sum, [, count]) => sum + Number(count ?? 0), 0), 1);
-  const scale = total > maxSeats ? maxSeats / total : 1;
-  const voteTypes = rows.flatMap(([type, count, label]) =>
-    Array.from({ length: Math.round(Number(count ?? 0) * scale) }, () => ({ type, label }))
-  );
-  return getFallbackHemicyclePositions(voteTypes.length).map((position, index) => ({
-    ...position,
-    id: `fallback-${index}`,
-    type: voteTypes[index]?.type ?? 'absent',
-    label: voteTypes[index]?.label ?? labels.absent,
-  })) as SeatView[];
-}
+  votesByPosition.set(getPositionKey(position), {
+    type: getSeatClass(vote.voteType),
+    deputy: vote.deputy,
+    group: position.group || vote.group,
+    vote: vote.vote,
+  });
+});
 
 function getSeatClass(voteType: VoteType) {
   return voteType === 'abstentions' ? 'abstention' : voteType;
+}
+
+function getPositionKey(position: { x: number; y: number }) {
+  return `${position.x},${position.y}`;
+}
+
+function isTelematicSeat(seat: string | null) {
+  return seat === null || seat === '-1';
 }
 ---
 
@@ -95,15 +81,26 @@ function getSeatClass(voteType: VoteType) {
   <figure class="hemicycle" aria-label={labels.title}>
     <svg class="hemicycle__map" viewBox="0 0 536 393" role="img">
       <title>{labels.title}</title>
-      <image href={`${import.meta.env.BASE_URL}hemiciclo-reference.png`} x="0" y="0" width="536" height="393" preserveAspectRatio="xMidYMid meet" />
       <g>
-        {seats.map((seat) => (
-          <circle class:list={['seat', `seat--${seat.type}`]} cx={seat.x} cy={seat.y} r={compact ? 4.6 : 5}>
-            <title>{seat.label}</title>
+        {officialSeatPositions.map((seat, index) => {
+          const seatVote = votesByPosition.get(getPositionKey(seat));
+          const type = seatVote ? seatVote.type : 'empty';
+          const tooltip = [seat.name, seatVote?.group || seat.group, seatVote?.vote || labels.noVote].filter(Boolean).join(' · ');
+
+          return (
+          <circle class:list={['seat', `seat--${type}`]} cx={seat.x} cy={seat.y} r={seatVote ? (compact ? 4.2 : 4.6) : (compact ? 3 : 3.3)} data-seat-index={index}>
+            <title>{tooltip}</title>
           </circle>
-        ))}
+          );
+        })}
       </g>
     </svg>
-    {unassignedVotes > 0 && <figcaption>{labels.unassigned}: {formatNumber(unassignedVotes, locale)}</figcaption>}
+    {(telematicVotes > 0 || unmappedVotes > 0) && (
+      <figcaption>
+        {telematicVotes > 0 && <span>{labels.telematic}: {formatNumber(telematicVotes, locale)}</span>}
+        {telematicVotes > 0 && unmappedVotes > 0 && <span aria-hidden="true"> · </span>}
+        {unmappedVotes > 0 && <span>{labels.unmapped}: {formatNumber(unmappedVotes, locale)}</span>}
+      </figcaption>
+    )}
   </figure>
 </div>
