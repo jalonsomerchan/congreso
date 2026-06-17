@@ -128,6 +128,24 @@ img, picture, svg, video { display: block; max-width: 100%; }
 .detail-card h2 { font-size: clamp(1.5rem, 5vw, 2.4rem); margin-bottom: 1rem; }
 .detail-card--wide { overflow: hidden; }
 .detail-card__header { align-items: center; display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+.stat-grid { display: grid; gap: .75rem; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; }
+.stat-grid div { border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface-soft); padding: .85rem; }
+.stat-grid dt { color: var(--color-text-soft); font-size: .75rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.stat-grid dd { font-size: clamp(1.45rem, 5vw, 2.3rem); font-weight: 900; line-height: 1; margin: .35rem 0 0; }
+.stats-columns { display: grid; gap: 1rem; }
+.deputy-list { display: grid; gap: .75rem; }
+.deputy-row { align-items: start; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); display: grid; gap: .85rem; padding: .9rem; }
+.deputy-row h3 { font-size: 1rem; letter-spacing: 0; }
+.deputy-row h3 a, .rank-list a, td a { color: var(--color-primary); text-decoration: none; }
+.deputy-row p { color: var(--color-text-muted); margin: .25rem 0 0; }
+.deputy-row dl { display: grid; gap: .5rem; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; }
+.deputy-row dt { color: var(--color-text-soft); font-size: .68rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.deputy-row dd { font-weight: 900; margin: .2rem 0 0; }
+.rank-list { display: grid; gap: .45rem; margin-top: .8rem; }
+.rank-list + .rank-list { margin-top: 1.3rem; }
+.rank-list h3 { font-size: .95rem; letter-spacing: 0; }
+.rank-list p { align-items: center; border-bottom: 1px solid var(--color-border); display: flex; gap: .75rem; justify-content: space-between; padding: .45rem 0; }
+.rank-list span { color: var(--color-text-muted); font-weight: 900; white-space: nowrap; }
 .metadata-grid { display: grid; gap: .75rem; margin: 0; }
 .metadata-grid div { border-radius: var(--radius-lg); background: var(--color-surface-soft); padding: .8rem; }
 .metadata-grid dt { color: var(--color-text-soft); font-size: .75rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
@@ -144,6 +162,6 @@ th:first-child, td:first-child { text-align: left; }
 .vote-tag--absent { background: var(--color-surface-soft); color: var(--color-text-soft); }
 pre { background: #020617; border-radius: var(--radius-lg); color: #e2e8f0; font-size: .82rem; line-height: 1.45; margin: 1rem 0 0; max-height: 42rem; overflow: auto; padding: 1rem; white-space: pre-wrap; word-break: break-word; }
 
-@media (min-width: 700px) { .records-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .vote-panel__stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } .metadata-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (min-width: 1024px) { .section-heading { grid-template-columns: minmax(0, 1fr) auto; } .records-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .records-grid--list { grid-template-columns: repeat(2, minmax(0, 1fr)); } .detail-layout { grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); } .detail-card--wide { grid-column: 1 / -1; } }
+@media (min-width: 700px) { .records-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .vote-panel__stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } .metadata-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } .deputy-row { align-items: center; grid-template-columns: minmax(0, 1fr) minmax(22rem, .75fr); } }
+@media (min-width: 1024px) { .section-heading { grid-template-columns: minmax(0, 1fr) auto; } .records-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .records-grid--list { grid-template-columns: repeat(2, minmax(0, 1fr)); } .detail-layout { grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); } .detail-card--wide { grid-column: 1 / -1; } .stats-columns { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .open-data__section { border-radius: var(--radius-xl); } .open-data h1 { max-width: 10ch; } }

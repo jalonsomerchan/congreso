@@ -1,0 +1,102 @@
+---
+import { type Locale } from '../config/site';
+import { getLocalizedPath, useTranslations } from '../i18n/ui';
+import { formatNumber } from '../lib/congressData';
+import { getVoteAnalytics, type DeputyStats } from '../lib/voteAnalytics';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+const localeCode = locale === 'en' ? 'en-GB' : 'es-ES';
+const analytics = await getVoteAnalytics();
+const deputies = analytics.deputies;
+
+function participationPercent(deputy: DeputyStats) {
+  return new Intl.NumberFormat(localeCode, { style: 'percent', maximumFractionDigits: 1 }).format(deputy.participationRate);
+}
+---
+
+<div class="open-data">
+  <section class="open-data__hero open-data__hero--compact" aria-labelledby="deputies-title">
+    <p class="open-data__eyebrow">{t('congress.deputies.eyebrow')}</p>
+    <h1 id="deputies-title">{t('congress.deputies.title')}</h1>
+    <p class="open-data__lead">{t('congress.deputies.description')}</p>
+    <div class="open-data__actions">
+      <a class="button-link button-link--ghost" href={getLocalizedPath('/', locale)}>{t('nav.home')}</a>
+    </div>
+  </section>
+
+  <section class="open-data__section" aria-labelledby="deputies-list-title">
+    <div class="section-heading section-heading--compact">
+      <div>
+        <p class="open-data__eyebrow">{formatNumber(deputies.length, localeCode)} {t('congress.deputies.count')}</p>
+        <h2 id="deputies-list-title">{t('congress.deputies.listTitle')}</h2>
+      </div>
+    </div>
+    <div
+      class="vote-search"
+      data-deputy-search
+      data-result-label={t('congress.deputies.resultsLabel')}
+      data-result-label-singular={t('congress.deputies.resultsLabelSingular')}
+      data-empty-label={t('congress.deputies.empty')}
+    >
+      <label class="vote-search__label" for="deputy-search-input">{t('congress.deputies.searchLabel')}</label>
+      <input
+        id="deputy-search-input"
+        class="vote-search__input"
+        type="search"
+        autocomplete="off"
+        placeholder={t('congress.deputies.searchPlaceholder')}
+        data-deputy-search-input
+      />
+      <p class="vote-search__hint" data-deputy-search-status>
+        {t('congress.deputies.searchHint')}
+      </p>
+    </div>
+    <div class="deputy-list">
+      {deputies.map((deputy) => (
+        <article class="deputy-row" data-deputy-card data-search-text={`${deputy.name} ${deputy.group}`}>
+          <div>
+            <h3><a href={getLocalizedPath(`/diputados/${deputy.slug}/`, locale)}>{deputy.name}</a></h3>
+            <p>{deputy.group}</p>
+          </div>
+          <dl>
+            <div><dt>{t('congress.stats.votes')}</dt><dd>{formatNumber(deputy.votes.length, localeCode)}</dd></div>
+            <div><dt>{t('congress.stats.participation')}</dt><dd>{participationPercent(deputy)}</dd></div>
+            <div><dt>{t('congress.vote.telematic')}</dt><dd>{formatNumber(deputy.telematicVotes, localeCode)}</dd></div>
+          </dl>
+        </article>
+      ))}
+    </div>
+  </section>
+</div>
+
+<script>
+  const root = document.querySelector('[data-deputy-search]');
+  const input = root?.querySelector('[data-deputy-search-input]');
+  const status = root?.querySelector('[data-deputy-search-status]');
+  const cards = Array.from(document.querySelectorAll('[data-deputy-card]'));
+
+  if (input instanceof HTMLInputElement && status) {
+    const plural = root?.getAttribute('data-result-label') ?? '';
+    const singular = root?.getAttribute('data-result-label-singular') ?? plural;
+    const empty = root?.getAttribute('data-empty-label') ?? '';
+
+    input.addEventListener('input', () => {
+      const query = input.value.trim().toLocaleLowerCase();
+      let visible = 0;
+
+      cards.forEach((card) => {
+        const text = card.getAttribute('data-search-text')?.toLocaleLowerCase() ?? '';
+        const matches = query.length === 0 || text.includes(query);
+        card.toggleAttribute('hidden', !matches);
+        if (matches) visible += 1;
+      });
+
+      status.textContent = visible === 0 ? empty : `${visible} ${visible === 1 ? singular : plural}`;
+    });
+  }
+</script>

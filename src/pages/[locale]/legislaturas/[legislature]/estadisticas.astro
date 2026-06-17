@@ -1,0 +1,21 @@
+---
+import LegislatureStatsPage from '../../../../components/LegislatureStatsPage.astro';
+import { defaultLocale, locales, type Locale } from '../../../../config/site';
+import { isLocale, useTranslations } from '../../../../i18n/ui';
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import { getLegislatureStatsPaths, type LegislatureStats } from '../../../../lib/voteAnalytics';
+
+export async function getStaticPaths() {
+  const localized = await Promise.all(locales.filter((locale) => locale !== defaultLocale).map((locale) => getLegislatureStatsPaths(locale)));
+  return localized.flat();
+}
+
+const localeParam = Astro.params.locale;
+const locale: Locale = isLocale(localeParam) ? localeParam : defaultLocale;
+const t = useTranslations(locale);
+const stats = Astro.props.stats as LegislatureStats;
+---
+
+<BaseLayout title={`${stats.legislature} · ${t('congress.legislature.statsTitle')}`} description={t('congress.legislature.description')} locale={locale}>
+  <LegislatureStatsPage locale={locale} stats={stats} />
+</BaseLayout>

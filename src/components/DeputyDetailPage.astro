@@ -1,0 +1,77 @@
+---
+import { type Locale } from '../config/site';
+import { getLocalizedPath, useTranslations } from '../i18n/ui';
+import { formatDate, formatNumber, type VoteType } from '../lib/congressData';
+import type { DeputyStats } from '../lib/voteAnalytics';
+
+interface Props {
+  locale: Locale;
+  deputy: DeputyStats;
+}
+
+const { locale, deputy } = Astro.props;
+const t = useTranslations(locale);
+const localeCode = locale === 'en' ? 'en-GB' : 'es-ES';
+const voteLabels: Record<VoteType, string> = {
+  yes: t('congress.vote.yes'),
+  no: t('congress.vote.no'),
+  abstentions: t('congress.vote.abstention'),
+  absent: t('congress.vote.absent'),
+};
+const participation = new Intl.NumberFormat(localeCode, { style: 'percent', maximumFractionDigits: 1 }).format(deputy.participationRate);
+const stats = [
+  [t('congress.stats.votes'), deputy.votes.length],
+  [t('congress.vote.yes'), deputy.counts.yes],
+  [t('congress.vote.no'), deputy.counts.no],
+  [t('congress.vote.abstention'), deputy.counts.abstentions],
+  [t('congress.vote.absent'), deputy.counts.absent],
+  [t('congress.vote.telematic'), deputy.telematicVotes],
+];
+---
+
+<div class="open-data">
+  <section class="open-data__hero open-data__hero--compact" aria-labelledby="deputy-title">
+    <p class="open-data__eyebrow">{deputy.group}</p>
+    <h1 id="deputy-title">{deputy.name}</h1>
+    <p class="open-data__lead">{t('congress.deputy.description')}</p>
+    <div class="open-data__actions">
+      <a class="button-link button-link--ghost" href={getLocalizedPath('/diputados/', locale)}>{t('congress.deputies.back')}</a>
+    </div>
+  </section>
+
+  <section class="open-data__section detail-layout">
+    <article class="detail-card">
+      <h2>{t('congress.deputy.stats')}</h2>
+      <dl class="metadata-grid">
+        {stats.map(([label, value]) => <div><dt>{label}</dt><dd>{formatNumber(value, localeCode)}</dd></div>)}
+        <div><dt>{t('congress.stats.participation')}</dt><dd>{participation}</dd></div>
+      </dl>
+    </article>
+
+    <article class="detail-card detail-card--wide">
+      <h2>{t('congress.deputy.votes')}</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>{t('congress.date')}</th>
+              <th>{t('congress.vote.label')}</th>
+              <th>{t('congress.sections.vote')}</th>
+              <th>{t('congress.term')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {deputy.votes.map((vote) => (
+              <tr>
+                <td>{formatDate(vote.date, localeCode)}</td>
+                <td><span class:list={['vote-tag', `vote-tag--${vote.voteType}`]}>{voteLabels[vote.voteType]}</span></td>
+                <td><a href={getLocalizedPath(`/votaciones/${vote.voteId}/`, locale)}>{vote.title}</a></td>
+                <td>{vote.legislature}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </article>
+  </section>
+</div>

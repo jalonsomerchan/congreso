@@ -1,0 +1,13 @@
+---
+import DeputiesIndexPage from '../../components/DeputiesIndexPage.astro';
+import { defaultLocale } from '../../config/site';
+import { useTranslations } from '../../i18n/ui';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const locale = defaultLocale;
+const t = useTranslations(locale);
+---
+
+<BaseLayout title={t('congress.deputies.title')} description={t('congress.deputies.description')} locale={locale}>
+  <DeputiesIndexPage locale={locale} />
+</BaseLayout>

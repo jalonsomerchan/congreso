@@ -1,0 +1,177 @@
+---
+import { type Locale } from '../config/site';
+import { getLocalizedPath, useTranslations } from '../i18n/ui';
+import { formatNumber, type VoteType } from '../lib/congressData';
+import type { DeputyStats, GroupStats, LegislatureStats } from '../lib/voteAnalytics';
+
+interface Props {
+  locale: Locale;
+  stats: LegislatureStats;
+}
+
+const { locale, stats } = Astro.props;
+const t = useTranslations(locale);
+const localeCode = locale === 'en' ? 'en-GB' : 'es-ES';
+const percentFormatter = new Intl.NumberFormat(localeCode, { style: 'percent', maximumFractionDigits: 1 });
+const voteLabels: Record<VoteType, string> = {
+  yes: t('congress.vote.yes'),
+  no: t('congress.vote.no'),
+  abstentions: t('congress.vote.abstention'),
+  absent: t('congress.vote.absent'),
+};
+const leastParticipating = [...stats.deputies].sort((a, b) => a.participationRate - b.participationRate).slice(0, 12);
+const mostParticipating = [...stats.deputies].sort((a, b) => b.participationRate - a.participationRate).slice(0, 12);
+const mostAbsent = [...stats.deputies].sort((a, b) => b.counts.absent - a.counts.absent).slice(0, 12);
+const mostNoDeputies = [...stats.deputies].sort((a, b) => b.counts.no - a.counts.no).slice(0, 12);
+const mostAbstainingDeputies = [...stats.deputies].sort((a, b) => b.counts.abstentions - a.counts.abstentions).slice(0, 12);
+const mostTelematicDeputies = [...stats.deputies].sort((a, b) => b.telematicVotes - a.telematicVotes).slice(0, 12);
+const mostAbstainingGroups = [...stats.groups].sort((a, b) => b.abstentionRate - a.abstentionRate).slice(0, 10);
+const mostNoGroups = [...stats.groups].sort((a, b) => b.noRate - a.noRate).slice(0, 10);
+const mostYesGroups = [...stats.groups].sort((a, b) => b.counts.yes / b.total - a.counts.yes / a.total).slice(0, 10);
+const closestVotes = [...stats.votes]
+  .sort((a, b) => Math.abs(a.totals.yes - a.totals.no) - Math.abs(b.totals.yes - b.totals.no))
+  .slice(0, 10);
+const overview = [
+  [t('congress.stats.voteCount'), stats.voteCount],
+  [t('congress.stats.approved'), stats.approvedCount],
+  [t('congress.stats.rejected'), stats.rejectedCount],
+  [voteLabels.yes, stats.totals.yes],
+  [voteLabels.no, stats.totals.no],
+  [voteLabels.abstentions, stats.totals.abstentions],
+  [voteLabels.absent, stats.totals.absent],
+];
+
+function groupRate(group: GroupStats, key: 'abstentionRate' | 'noRate') {
+  return percentFormatter.format(group[key]);
+}
+
+function participation(deputy: DeputyStats) {
+  return percentFormatter.format(deputy.participationRate);
+}
+
+function yesRate(group: GroupStats) {
+  return group.total === 0 ? percentFormatter.format(0) : percentFormatter.format(group.counts.yes / group.total);
+}
+
+function voteMargin(vote: LegislatureStats['votes'][number]) {
+  return formatNumber(Math.abs(vote.totals.yes - vote.totals.no), localeCode);
+}
+---
+
+<div class="open-data">
+  <section class="open-data__hero open-data__hero--compact" aria-labelledby="legislature-title">
+    <p class="open-data__eyebrow">{t('congress.legislature.eyebrow')}</p>
+    <h1 id="legislature-title">{stats.legislature}</h1>
+    <p class="open-data__lead">{t('congress.legislature.description')}</p>
+    <div class="open-data__actions">
+      <a class="button-link button-link--ghost" href={getLocalizedPath('/votaciones/', locale)}>{t('congress.list.votesTitle')}</a>
+    </div>
+  </section>
+
+  <section class="open-data__section" aria-labelledby="overview-title">
+    <div class="section-heading section-heading--compact">
+      <div>
+        <p class="open-data__eyebrow">{t('congress.stats.summary')}</p>
+        <h2 id="overview-title">{t('congress.legislature.statsTitle')}</h2>
+      </div>
+    </div>
+    <dl class="stat-grid">
+      {overview.map(([label, value]) => <div><dt>{label}</dt><dd>{formatNumber(value, localeCode)}</dd></div>)}
+    </dl>
+  </section>
+
+  <section class="open-data__section stats-columns">
+    <article class="detail-card">
+      <h2>{t('congress.stats.groups')}</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>{t('congress.group')}</th><th>{voteLabels.yes}</th><th>{voteLabels.no}</th><th>{voteLabels.abstentions}</th><th>{voteLabels.absent}</th></tr></thead>
+          <tbody>
+            {stats.groups.map((group) => (
+              <tr><th>{group.group}</th><td>{formatNumber(group.counts.yes, localeCode)}</td><td>{formatNumber(group.counts.no, localeCode)}</td><td>{formatNumber(group.counts.abstentions, localeCode)}</td><td>{formatNumber(group.counts.absent, localeCode)}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <article class="detail-card">
+      <h2>{t('congress.stats.groupTrends')}</h2>
+      <div class="rank-list">
+        <h3>{t('congress.stats.moreYes')}</h3>
+        {mostYesGroups.map((group) => <p><strong>{group.group}</strong><span>{yesRate(group)}</span></p>)}
+      </div>
+      <div class="rank-list">
+        <h3>{t('congress.stats.moreAbstention')}</h3>
+        {mostAbstainingGroups.map((group) => <p><strong>{group.group}</strong><span>{groupRate(group, 'abstentionRate')}</span></p>)}
+      </div>
+      <div class="rank-list">
+        <h3>{t('congress.stats.moreNo')}</h3>
+        {mostNoGroups.map((group) => <p><strong>{group.group}</strong><span>{groupRate(group, 'noRate')}</span></p>)}
+      </div>
+    </article>
+
+    <article class="detail-card">
+      <h2>{t('congress.stats.moreParticipation')}</h2>
+      <div class="rank-list">
+        {mostParticipating.map((deputy) => (
+          <p><a href={getLocalizedPath(`/diputados/${deputy.slug}/`, locale)}>{deputy.name}</a><span>{participation(deputy)}</span></p>
+        ))}
+      </div>
+    </article>
+
+    <article class="detail-card">
+      <h2>{t('congress.stats.lessParticipation')}</h2>
+      <div class="rank-list">
+        {leastParticipating.map((deputy) => (
+          <p><a href={getLocalizedPath(`/diputados/${deputy.slug}/`, locale)}>{deputy.name}</a><span>{participation(deputy)}</span></p>
+        ))}
+      </div>
+    </article>
+
+    <article class="detail-card">
+      <h2>{t('congress.stats.moreNoDeputies')}</h2>
+      <div class="rank-list">
+        {mostNoDeputies.map((deputy) => (
+          <p><a href={getLocalizedPath(`/diputados/${deputy.slug}/`, locale)}>{deputy.name}</a><span>{formatNumber(deputy.counts.no, localeCode)}</span></p>
+        ))}
+      </div>
+    </article>
+
+    <article class="detail-card">
+      <h2>{t('congress.stats.moreAbstentionDeputies')}</h2>
+      <div class="rank-list">
+        {mostAbstainingDeputies.map((deputy) => (
+          <p><a href={getLocalizedPath(`/diputados/${deputy.slug}/`, locale)}>{deputy.name}</a><span>{formatNumber(deputy.counts.abstentions, localeCode)}</span></p>
+        ))}
+      </div>
+    </article>
+
+    <article class="detail-card">
+      <h2>{t('congress.stats.moreTelematic')}</h2>
+      <div class="rank-list">
+        {mostTelematicDeputies.map((deputy) => (
+          <p><a href={getLocalizedPath(`/diputados/${deputy.slug}/`, locale)}>{deputy.name}</a><span>{formatNumber(deputy.telematicVotes, localeCode)}</span></p>
+        ))}
+      </div>
+    </article>
+
+    <article class="detail-card">
+      <h2>{t('congress.stats.moreAbsences')}</h2>
+      <div class="rank-list">
+        {mostAbsent.map((deputy) => (
+          <p><a href={getLocalizedPath(`/diputados/${deputy.slug}/`, locale)}>{deputy.name}</a><span>{formatNumber(deputy.counts.absent, localeCode)}</span></p>
+        ))}
+      </div>
+    </article>
+
+    <article class="detail-card detail-card--wide">
+      <h2>{t('congress.stats.closestVotes')}</h2>
+      <div class="rank-list">
+        {closestVotes.map((vote) => (
+          <p><a href={getLocalizedPath(`/votaciones/${vote.id}/`, locale)}>{vote.title}</a><span>{t('congress.stats.margin')}: {voteMargin(vote)}</span></p>
+        ))}
+      </div>
+    </article>
+  </section>
+</div>

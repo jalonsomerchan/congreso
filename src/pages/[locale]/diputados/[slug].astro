@@ -1,0 +1,21 @@
+---
+import DeputyDetailPage from '../../../components/DeputyDetailPage.astro';
+import { defaultLocale, locales, type Locale } from '../../../config/site';
+import { isLocale, useTranslations } from '../../../i18n/ui';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { getDeputyPaths, type DeputyStats } from '../../../lib/voteAnalytics';
+
+export async function getStaticPaths() {
+  const localized = await Promise.all(locales.filter((locale) => locale !== defaultLocale).map((locale) => getDeputyPaths(locale)));
+  return localized.flat();
+}
+
+const localeParam = Astro.params.locale;
+const locale: Locale = isLocale(localeParam) ? localeParam : defaultLocale;
+const t = useTranslations(locale);
+const deputy = Astro.props.deputy as DeputyStats;
+---
+
+<BaseLayout title={deputy.name} description={t('congress.deputy.description')} locale={locale}>
+  <DeputyDetailPage locale={locale} deputy={deputy} />
+</BaseLayout>

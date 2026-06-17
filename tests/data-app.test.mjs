@@ -13,6 +13,9 @@ describe('data app structure', () => {
       'src/components/CongressHome.astro',
       'src/components/CongressListPage.astro',
       'src/components/CongressDetailPage.astro',
+      'src/components/DeputiesIndexPage.astro',
+      'src/components/DeputyDetailPage.astro',
+      'src/components/LegislatureStatsPage.astro',
       'src/components/RecordCard.astro',
       'src/components/VoteDeputiesTable.astro',
       'src/components/VoteHemicycle.astro',
@@ -23,6 +26,13 @@ describe('data app structure', () => {
       'src/lib/congressData.ts',
       'src/lib/hemicycleLayout.ts',
       'src/lib/officialHemicycle.ts',
+      'src/lib/voteAnalytics.ts',
+      'src/pages/diputados/index.astro',
+      'src/pages/diputados/[slug].astro',
+      'src/pages/legislaturas/[legislature]/estadisticas.astro',
+      'src/pages/[locale]/diputados/index.astro',
+      'src/pages/[locale]/diputados/[slug].astro',
+      'src/pages/[locale]/legislaturas/[legislature]/estadisticas.astro',
       'src/pages/[section]/index.astro',
       'src/pages/[section]/[id].astro',
       'src/pages/[locale]/[section]/index.astro',
@@ -34,7 +44,7 @@ describe('data app structure', () => {
     const es = readJson('src/i18n/translations/es.json');
     const en = readJson('src/i18n/translations/en.json');
 
-    ['congress.home.latestVotes', 'congress.home.latestInitiatives', 'congress.home.latestSpeeches', 'congress.vote.hemicycle', 'congress.vote.unassigned', 'congress.vote.byDeputy', 'congress.search.label'].forEach((key) => {
+    ['congress.home.latestVotes', 'congress.home.latestInitiatives', 'congress.home.latestSpeeches', 'congress.vote.hemicycle', 'congress.vote.unassigned', 'congress.vote.byDeputy', 'congress.search.label', 'congress.deputies.title', 'congress.deputies.searchLabel', 'congress.legislature.statsTitle', 'congress.stats.closestVotes'].forEach((key) => {
       assert.ok(es[key], `${key} should exist in es.json`);
       assert.ok(en[key], `${key} should exist in en.json`);
     });
