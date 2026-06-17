@@ -113,13 +113,11 @@ img, picture, svg, video { display: block; max-width: 100%; }
 .vote-stat--no { border-color: color-mix(in srgb, var(--color-danger), transparent 55%); }
 .vote-stat--abstention { border-color: color-mix(in srgb, var(--color-warning), transparent 55%); }
 .vote-stat--absent { border-color: var(--color-border-strong); }
-.hemicycle { background: radial-gradient(circle at 50% 100%, var(--color-surface-soft), transparent 68%); border: 1px solid var(--color-border); border-radius: var(--radius-xl); margin: 0; overflow: hidden; padding: .5rem; }
-.hemicycle__map { aspect-ratio: 1000 / 640; height: auto; width: 100%; }
-.hemicycle__floor { fill: color-mix(in srgb, var(--color-surface-soft), transparent 15%); stroke: var(--color-border); stroke-width: 4; }
-.hemicycle__front { fill: none; stroke: var(--color-border-strong); stroke-linecap: round; stroke-width: 7; }
+.hemicycle { background: linear-gradient(180deg, color-mix(in srgb, var(--color-surface), transparent 4%), color-mix(in srgb, var(--color-surface-soft), transparent 8%)); border: 1px solid var(--color-border); border-radius: var(--radius-xl); margin: 0; overflow: hidden; padding: .5rem; }
+.hemicycle__map { aspect-ratio: 536 / 393; height: auto; width: 100%; }
 .vote-panel--compact .hemicycle { padding: .35rem; }
 .vote-panel--compact .hemicycle__map { max-height: 12rem; }
-.seat { stroke: var(--color-surface); stroke-width: 2.25; }
+.seat { stroke: var(--color-surface); stroke-width: 1.4; }
 .seat--yes { fill: var(--color-success); }
 .seat--no { fill: var(--color-danger); }
 .seat--abstention { fill: var(--color-warning); }

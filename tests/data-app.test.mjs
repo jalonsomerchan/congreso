@@ -21,6 +21,8 @@ describe('data app structure', () => {
       'src/config/dataConfig.ts',
       'src/lib/congressData.ts',
       'src/lib/hemicycleLayout.ts',
+      'src/lib/officialHemicycle.ts',
+      'public/hemiciclo-reference.png',
       'src/pages/[section]/index.astro',
       'src/pages/[section]/[id].astro',
       'src/pages/[locale]/[section]/index.astro',
